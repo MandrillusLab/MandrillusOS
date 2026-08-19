@@ -23,8 +23,10 @@ public static class Program
 		Console.ResetColor();
 		Console.Clear();
 		Console.WriteLine("Hello World!");
+		Console.WriteLine("MOSA x86 Kernel");
+		Console.WriteLine("2026 - Mandrillus OS Kernel");
 
-		for (; ; )
+        for (; ; )
 		{ }
 	}
 }
