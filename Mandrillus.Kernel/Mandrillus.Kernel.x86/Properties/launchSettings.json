@@ -1,0 +1,10 @@
+{
+	"profiles": {
+		"Mandrillus.Kernel.x86": {
+			"commandName": "Executable",
+			"executablePath": "dotnet",
+			"commandLineArgs": "Tools/Mosa.Tool.Launcher.dll Mandrillus.Kernel.x86.dll",
+			"workingDirectory": "$(ProjectDir)bin"
+		}
+	}
+}

@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<LangVersion>14.0</LangVersion>
+		<OutputPath>bin</OutputPath>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<DisableStandardFrameworkResolution>true</DisableStandardFrameworkResolution>
+		<DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+		<UseAppHost>false</UseAppHost>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Mosa.Platform" Version="2.6.1.1669" />
+		<PackageReference Include="Mosa.DeviceSystem" Version="2.6.1.1669" />
+		<PackageReference Include="Mosa.Tools.Package" Version="2.6.1.1669" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Mandrillus.Kernel/Mandrillus.Kernel.x86/Mandrillus.Kernel.x86.csproj" />
+  <Project Path="Mandrillus.Kernel/Mandrillus.Kernel/Mandrillus.Kernel.csproj" />
+</Solution>
