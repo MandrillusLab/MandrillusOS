@@ -143,6 +143,18 @@ O Mandrillus OS também foi validado rodando em Hyper-V, ao lado de outros siste
 3. No **Hyper-V Manager**, crie uma nova VM como **Generation 1**, com Secure Boot desabilitado, e anexe o `.vhd` gerado como disco de boot.
 4. Inicie a VM — o kernel deve bootar e exibir a saída de debug/console, da mesma forma que no QEMU.
 
+## Contribuindo / Fluxo de Git
+
+Este projeto segue um **fluxo trunk-based simplificado** (GitHub Flow), não o Git Flow completo — adequado para um projeto mantido solo e ainda em estágio inicial, com ritmo acelerado de mudanças.
+
+- **`master`** está sempre estável e bootável. Todo commit aqui deve, no mínimo, compilar e bootar sem travar no QEMU.
+- **`feature/<número-da-issue>-<nome-curto>`** — uma branch por funcionalidade/issue, a partir de `master` (ex: `feature/8-interactive-shell`). O número da issue no nome da branch permite que o GitHub vincule automaticamente o PR à issue correspondente.
+- **`fix/<nome-curto>`** — para correções de bugs que não estão ligadas a uma funcionalidade planejada.
+
+Fluxo: abrir a issue → criar branch a partir de `master` → commits incrementais → abrir um Pull Request de volta para `master` (mesmo trabalhando sozinho, PRs documentam *por que* uma decisão foi tomada e servem como um gate natural de CI assim que o xUnit estiver em uso) → **squash merge** → deletar a branch.
+
+O squash merge mantém o histórico de `master` legível como uma linha do tempo limpa, um commit por funcionalidade, independentemente de quantos commits intermediários aconteceram na branch.
+
 ## Licença
 
 O código deste repositório é licenciado sob a [MIT License](./LICENSE).
