@@ -1,5 +1,5 @@
 // Copyright (c) MOSA Project. Licensed under the New BSD License.
-
+// Copyright (c) Mandrillus OS. Licensed under the MIT License.
 using System;
 using Mosa.Kernel.BareMetal;
 using Mosa.Runtime.Plug;

@@ -24,6 +24,7 @@ Este não é um projeto de "CRUD com banco de dados". Ele existe para evidenciar
 - **Compilação AOT e IL**: entendimento prático de como C# é traduzido para código de máquina, não apenas JIT em tempo de execução
 - **Arquitetura sem rede de segurança**: sem GC gerenciado por runtime completo, sem exceções tratadas por um framework maduro, sem BCL inteira disponível — decisões de design precisam ser feitas explicitamente
 - **Toolchain não convencional**: MOSA, emulação via QEMU, geração de imagens de disco bootáveis
+- **Maturidade arquitetural**: saber com precisão quais partes de um sistema são infraestrutura herdada versus trabalho de engenharia autoral, e ser capaz de explicar essa fronteira com clareza
 
 ## Referências e inspiração
 
@@ -36,28 +37,47 @@ O Mandrillus OS não é um fork de nenhum dos dois — é construído sobre o MO
 
 ## Status atual
 
-🚧 **Fase inicial** — kernel básico gerado a partir do template `mosakrnl`, com boot mínimo ("Hello World") validado em **dois hypervisors diferentes**: QEMU e Hyper-V (Generation 1). Ainda não há funcionalidades além do boot mínimo.
+🚧 **Fase inicial** — kernel gerado a partir do template `mosakrnl`, com boot validado em **dois hypervisors diferentes**: QEMU e Hyper-V (Generation 1). O kernel MOSA BareMetal por baixo já cuida de gerenciamento de memória, interrupções e detecção de dispositivos no boot (veja abaixo); a funcionalidade específica do Mandrillus — começando por um shell interativo — é o foco atual de desenvolvimento. Veja o [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md) para o acompanhamento completo por fase.
 
 Validar o boot em mais de um hypervisor não é redundância — é evidência de robustez. QEMU (sem KVM) é majoritariamente um emulador por software, mais tolerante a peculiaridades de bootloader. O Hyper-V é um hypervisor nativo (tipo 1), com acesso direto às extensões de virtualização da CPU, e historicamente mais rígido sobre o que aceita bootar. O Mandrillus OS já roda em ambos, lado a lado com sistemas operacionais de produção no mesmo host Hyper-V.
 
-## Arquitetura (visão inicial)
+## Arquitetura: o que é autoral vs. herdado
+
+O Mandrillus OS é construído sobre o **kernel BareMetal** do MOSA, não implementado em assembly puro. Essa é uma escolha deliberada — o MOSA já resolve com solidez as questões de baixo nível do x86 (GDT, IDT, gerenciamento de memória, detecção de dispositivos), permitindo que o Mandrillus foque na camada de aplicação em vez de re-derivar décadas de trabalho de base em desenvolvimento de SO.
+
+Isso foi confirmado cruzando a [documentação do MOSA](https://www.mosa-project.org/a-dive-into-baremetal.html) com a árvore de dependências real do `Mandrillus.Kernel.x86` (que referencia `Mosa.Kernel.BareMetal.x86.dll` e `Mosa.Kernel.BareMetal.dll`) e o próprio log de boot do kernel:
+
+| Componente | Status |
+|---|---|
+| GDT (Global Descriptor Table) | Fornecido pelo MOSA BareMetal |
+| IDT (Interrupt Descriptor Table) | Fornecido pelo MOSA BareMetal |
+| Gerenciamento de memória física e virtual | Fornecido pelo MOSA BareMetal |
+| Entrada de teclado | Fornecido pelo MOSA BareMetal (dispositivo `StandardKeyboard`) |
+| Console / saída de texto | Fornecido pelo MOSA BareMetal (API `Console`) |
+| Timer (PIT) | Em investigação — ainda não confirmado em nenhum dos sentidos |
+| Shell interativo | **Trabalho autoral do Mandrillus** |
+| Futuro: modelo de processos, sistema de arquivos, aplicações | **Trabalho autoral do Mandrillus** |
+
+Na prática, isso significa que o trabalho de engenharia autoral do Mandrillus começa na camada de aplicação — a partir do shell interativo — em vez da camada de boot/drivers. O acompanhamento completo de cada item, incluindo notas de verificação, está no [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md).
+
+## Estrutura do projeto
 
 ```
 Mandrillus/                              # Solution
 ├── Mandrillus.Kernel/                   # Projeto de kernel agnóstico de plataforma
 │   ├── Mandrillus.Kernel.csproj
-│   ├── Program.cs                       # Entry point, boot options, EntryPoint()
-│   └── Boot.cs
+│   └── Program.cs                       # classe Program: SetBootOptions(), EntryPoint()
 ├── Mandrillus.Kernel.x86/               # Projeto executável, alvo x86
 │   ├── Mandrillus.Kernel.x86.csproj
+│   ├── Boot.cs                          # classe Boot: Main() — entry point real, específico de x86
 │   └── bin/
 │       └── Tools/                       # Mosa.Tool.Launcher / Launcher.Console
 └── README.md
 ```
 
-O template MOSA (`mosakrnl`) gera essa separação em dois projetos: um kernel "genérico" (`Mandrillus.Kernel`) e um projeto por arquitetura-alvo (`Mandrillus.Kernel.x86`), que referencia o primeiro e adiciona os pacotes específicos da plataforma (`Mosa.Platform.x86`).
+O template MOSA (`mosakrnl`) gera essa separação em dois projetos: o kernel agnóstico (`Mandrillus.Kernel`), contendo `Program.cs` com a configuração de boot e o `EntryPoint()` lógico, e um projeto por arquitetura-alvo (`Mandrillus.Kernel.x86`), que referencia o primeiro, adiciona os pacotes específicos da plataforma (`Mosa.Platform.x86`) e contém `Boot.cs` — o entry point executável real (`Main()`) invocado pelo bootloader, que por sua vez chama o `EntryPoint()` do kernel agnóstico.
 
-Conforme o kernel evolui, esta seção será expandida para refletir a separação entre camada de boot, gerenciamento de memória, drivers básicos (teclado, vídeo) e a superfície de API interna que futuras aplicações do ecossistema vão consumir.
+Conforme o kernel evolui, esta seção será expandida para refletir a superfície de API interna que futuras aplicações do ecossistema vão consumir — construída sobre a camada BareMetal herdada descrita acima.
 
 ## O ecossistema Mandrillus Systems
 

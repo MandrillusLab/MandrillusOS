@@ -1,4 +1,4 @@
-*Leia em outros idiomas: [English](ROADMAP.en.md)*
+*Leia em outros idiomas: [English](ROADMAP.md)*
 
 # Roadmap do Mandrillus
 
@@ -16,19 +16,22 @@ Legenda de status: ✅ Concluído · 🚧 Em andamento · ⏳ Planejado · 💭 
 - ✅ Boot validado em QEMU (via Mosa.Tool.Launcher)
 - ✅ Boot validado em Hyper-V (Generation 1, Secure Boot desabilitado, conversão manual `.img` → `.vhd`)
 - ✅ Licenciamento: MIT (Mandrillus Systems) + `THIRD-PARTY-LICENSES.md` (New BSD do MOSA)
+- ✅ README bilíngue (`README.md` / `README.pt-BR.md`)
 
 ## Fase 1 — Núcleo do Kernel (x86, 32 bits)
 
 Rastreado como Issues no GitHub, sob o milestone **"Phase 1 — Kernel Core"**.
 
-- ⏳ Configuração da GDT (Global Descriptor Table) — #1
-- ⏳ IDT (Interrupt Descriptor Table) + tratamento básico de interrupções — #2
-- ⏳ Gerenciador de memória física (alocador de páginas) — #3
-- ⏳ Memória virtual / paginação — #4
-- ⏳ Interrupção de timer (PIT/IRQ0) — #5
-- ⏳ Driver de teclado (IRQ1) — #6
-- ⏳ Driver de vídeo em modo texto (VGA) — #7
-- ⏳ Shell interativo mínimo (boot + interrupções + teclado + saída integrados) — #8
+> **Nota:** uma investigação confirmou (via [documentação do MOSA](https://www.mosa-project.org/a-dive-into-baremetal.html) e o log de boot real) que a maior parte da infraestrutura de baixo nível da Fase 1 já é fornecida pelo kernel MOSA BareMetal sobre o qual o `Mandrillus.Kernel.x86` é construído. Os itens abaixo marcados como *(herdado)* não são trabalho autoral — estão documentados aqui por rastreabilidade e para deixar a arquitetura explícita.
+
+- ✅ Configuração da GDT (Global Descriptor Table) *(herdado do MOSA BareMetal)* — #1
+- ✅ IDT (Interrupt Descriptor Table) + tratamento básico de interrupções *(herdado do MOSA BareMetal)* — #2
+- ✅ Gerenciador de memória física (alocador de páginas) *(herdado do MOSA BareMetal)* — #3
+- ✅ Memória virtual / paginação *(herdado do MOSA BareMetal)* — #4
+- ⏳ Interrupção de timer (PIT/IRQ0) — investigação em andamento, pode também ser herdado — #5
+- ✅ Driver de teclado *(herdado do MOSA BareMetal — `StandardKeyboard`)* — #6
+- ✅ Driver de vídeo em modo texto *(herdado do MOSA BareMetal — API `Console`)* — #7
+- ⏳ Shell interativo mínimo (trabalho autoral — integra teclado + saída de console em um loop de comandos) — #8
 
 ## Fase 2 — Serviços de Sistema
 
@@ -60,7 +63,5 @@ Trabalho posterior aos marcos do kernel — requer um modelo de processos e sist
 
 - Ferramentas: `Mosa.Tool.Launcher` (GUI) e `Mosa.Tool.Launcher.Console` (CLI, flags de traço único, ex: `-platform x86`, `-emulator qemu`, `-destination <path>`).
 - Plataforma alvo para as Fases 0–2: **x86 (32 bits)** — escolhida pela maturidade do toolchain, paginação mais simples e configuração de modo protegido melhor documentada dentro do MOSA.
-
----
-
-2026 *"Mandrillus Systems — evolution, one bit at a time."*
+- Tagline: *"Mandrillus Systems — evolution, one bit at a time."*
+- **Nota de arquitetura:** o `Mandrillus.Kernel.x86` é construído sobre o **kernel MOSA BareMetal** (`Mosa.Kernel.BareMetal.x86.dll` / `Mosa.Kernel.BareMetal.dll`, referenciado via os pacotes `Mosa.Platform.x86` e `Mosa.Platform`). O BareMetal cuida de GDT, IDT, gerenciamento de memória física/virtual, primitivas de escalonamento, HAL e registro de drivers de dispositivo (incluindo teclado e saída de vídeo/console) automaticamente durante o boot, antes de qualquer código específico do Mandrillus ser executado. O trabalho autoral do Mandrillus começa na camada de aplicação — o shell interativo em diante. Veja o `README.md` para uma divisão clara entre componentes herdados e autorais.
