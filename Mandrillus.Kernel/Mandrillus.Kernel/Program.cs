@@ -22,9 +22,12 @@ public static class Program
 
 		Console.ResetColor();
 		Console.Clear();
-		Console.WriteLine("Hello World!");
+		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("MOSA x86 Kernel");
-		Console.WriteLine("2026 - Mandrillus OS Kernel");
+        Console.ForegroundColor= ConsoleColor.Blue;
+        Console.WriteLine("2026 - Mandrillus OS Kernel v0.0.1");
+		Console.ResetColor();
+		Console.WriteLine("Hello World!");
 
         for (; ; )
 		{ }
