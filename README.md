@@ -143,6 +143,18 @@ Mandrillus OS has also been validated running on Hyper-V, alongside other operat
 3. In **Hyper-V Manager**, create a new VM as **Generation 1**, with Secure Boot disabled, and attach the generated `.vhd` as the boot disk.
 4. Start the VM — the kernel should boot and display debug/console output, the same way it does in QEMU.
 
+## Contributing / Git workflow
+
+This project follows a simplified **trunk-based workflow** (GitHub Flow), not full Git Flow — appropriate for a solo-maintained project still in an early, fast-moving stage.
+
+- **`master`** is always stable and bootable. Every commit here should, at minimum, compile and boot without crashing in QEMU.
+- **`feature/<issue-number>-<short-name>`** — one branch per feature/issue, branched from `master` (e.g. `feature/8-interactive-shell`). The issue number in the branch name lets GitHub auto-link the PR to its issue.
+- **`fix/<short-name>`** — for bug fixes that aren't tied to a planned feature.
+
+Workflow: open the issue → branch from `master` → commit incrementally → open a Pull Request back into `master` (even solo, PRs document *why* a decision was made and are a natural CI gate once xUnit is in place) → **squash merge** → delete the branch.
+
+Squash merging keeps `master`'s history readable as a clean, one-commit-per-feature timeline, regardless of how many intermediate commits happened on the branch.
+
 ## License
 
 The code in this repository is licensed under the [MIT License](./LICENSE).
