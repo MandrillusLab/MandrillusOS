@@ -42,7 +42,22 @@ Centralizada em `MandrillusVersion.cs` (namespace `Mandrillus.Kernel`), não har
   - Sem exceção para admins (nem para o próprio Leandro)
 - **Origem da regra:** um PR de spam automatizado (#11, bot) foi recebido e fechado sem merge — a proteção de branch foi criada em resposta a esse evento, não é só formalidade preventiva teórica
 
+### ⚠️ Armadilha confirmada: resolver conflito pelo navegador vs. localmente
+
+Se um `git rebase`/`git merge` local ficar com conflito pendente numa branch, e o conflito acabar sendo resolvido **pela interface web do GitHub** (editor de conflito do PR) em vez de terminar a resolução local, o repositório **local continua com o rebase/merge marcado como em andamento** — o Git não sabe que o remoto já resolveu.
+
+Sintoma: comandos como `git checkout <outra-branch>` ou `git stash pop` falham com `needs merge` / `you need to resolve your current index first`, mesmo o PR já estando mergeado no GitHub.
+
+**Correção segura:** confirmar primeiro que o merge realmente terminou no remoto (`git log master --oneline` depois de `git pull`, procurando o commit de squash), e só então:
+```powershell
+git rebase --abort    # ou git merge --abort, dependendo de qual estava em andamento
+```
+Isso descarta com segurança o estado local pendente sem perder nada, porque o resultado real já está seguro no `master` remoto.
+
+**Regra prática:** ao resolver conflito de um PR pela web do GitHub, sempre voltar ao terminal depois e abortar qualquer rebase/merge local que tenha ficado pendente daquela mesma branch, antes de tentar trocar de branch ou aplicar stash.
+
 ## Notas
 
 - Autoria/revisão de todo PR continua manual — nenhuma ferramenta de IA abre, aprova ou faz merge de PR sozinha (consistente com a decisão de não usar modo agent, ver [CLAUDE.md](../../CLAUDE.md))
 - Tags de versão (`vX.Y.Z`) devem corresponder exatamente ao valor em `MandrillusVersion.cs` no commit taggeado — checar antes de criar a tag
+- O Copilot code review automático (configurado no repositório) roda em todo PR e pode gerar comentários; sob a regra "resolução de conversas obrigatória", esses comentários **bloqueiam o merge** até serem marcados como resolvidos — mesmo sendo de uma IA, vale ler antes de resolver, já que podem apontar erros reais (ex.: caminho de arquivo incorreto em uma citação)

@@ -16,8 +16,11 @@
 2. **`Mosa.Korlib` é menor que o BCL padrão.** `Dictionary<TKey,TValue>` e `string.Join` não existem — ver workarounds e o padrão para novos gaps em [docs/context/constraints.md](docs/context/constraints.md#korlib)
 3. **NuGet MOSA pinado em `2.6.1.1669`** — não sugerir upgrade sem avisar da regressão de empacotamento. Detalhes: [docs/context/tooling.md](docs/context/tooling.md#versionamento)
 
+## Atribuição de pesquisa
+Quando uma decisão de design é informada por uma fonte externa específica (código-fonte de outro projeto, discussão pública, implementação de referência), ela é citada diretamente no README/ROADMAP com a fonte e o porquê de não ter sido apenas copiada — nunca apresentada como se tivesse sido alcançada isoladamente. Ver exemplo real: [README.md#design-references](README.md#design-references-credit-where-its-due). Uma IA discutindo uma decisão técnica deste projeto deve seguir o mesmo padrão ao explicar de onde a informação vem.
+
 ## Onde estamos agora
-Fase 1 quase fechada. Único entregável original restante: **Issue #8 (shell Drill)**, em progresso, sendo digitada manualmente — uma IA não deve gerar o arquivo inteiro, só discutir trechos.
+Fase 1 quase fechada. Único entregável original restante: **Issue #8 (shell Drill)**, em progresso ativo, sendo digitada manualmente — uma IA não deve gerar o arquivo inteiro, só discutir trechos.
 Estado completo, decisões fechadas e itens deliberadamente adiados: [docs/context/status.md](docs/context/status.md)
 
 ## Referência detalhada
@@ -27,4 +30,4 @@ Estado completo, decisões fechadas e itens deliberadamente adiados: [docs/conte
 - [docs/context/status.md](docs/context/status.md) — fase atual, arquitetura do Drill, decisões fechadas (PIT/Issue #9), itens adiados
 
 ---
-*Mantido manualmente por Leandro. Atualizar ao fechar uma Issue ou decisão de design relevante. Em caso de divergência, README/ROADMAP prevalecem como documentação pública.*
+*Mantido manualmente por Leandro. Atualizar ao fechar uma Issue ou decisão de design relevante. Em caso de divergência, README/ROADMAP prevalecem como documentação pública. Última verificação de consistência contra o master: confirmado que README.md e ROADMAP.md refletem corretamente a decisão da Issue #9 e a seção de atribuição de pesquisa.*

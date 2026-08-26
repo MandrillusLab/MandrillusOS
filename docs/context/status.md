@@ -9,8 +9,8 @@ Use este arquivo para não sugerir algo já decidido, já descartado, ou fora de
 Fase 1 quase fechada.
 
 - ✅ Herdados do MOSA BareMetal, não são trabalho original: GDT, IDT, gerência de memória, driver de teclado, saída de console/vídeo (Issues #1–4, #6–7)
-- 🔨 **Issue #8 (shell Drill) — único entregável original restante da Fase 1**
-- ⏭️ Issue #9 (PIT timer) inicia a Fase 2 — design já fechado, implementação não iniciada
+- 🔨 **Issue #8 (shell Drill) — único entregável original restante da Fase 1, em progresso ativo**
+- ⏭️ Issue #9 (PIT timer) inicia a Fase 2 — design fechado, implementação **não iniciada** (branch de investigação antiga já limpa; nova branch de implementação a ser criada quando o trabalho começar de fato)
 
 ## Issue #8 — Drill
 
@@ -28,7 +28,9 @@ Arquitetura já definida, sendo digitada manualmente linha a linha (escolha deli
 Decisão de design **fechada**, implementação pendente. **Opção B escolhida:** driver de timer separado com `IRQ=0` via `DeviceService`/`ISADeviceDriverRegistryEntry`, rodando ao lado (não substituindo) `Scheduler.ClockInterrupt`. Ambos disparam a cada IRQ0 via `DeviceService.IRQDispatch` (`List<Device>[]`, suporta múltiplos handlers por IRQ).
 
 - Inspiração de design: `Cosmos.HAL/PIT.cs` (portas canônicas, sequência modo→LSB→MSB) — **evitar** a limitação do Cosmos de sempre rearmar para 65535 em vez de reprogramar para a deadline mais próxima (cap de granularidade ~54.9ms)
-- Reverificar contra `IDT.cs` a cada bump de versão do MOSA
+- Reverificar contra `Source/Mosa.Kernel.BareMetal.x86/IDT.cs` a cada bump de versão do MOSA
+
+**Proveniência da investigação:** a tabela completa de fontes (código MOSA, discussões do Discord, Cosmos+xv6) que embasou essa decisão, e a seção de atribuição de design (por que cada referência foi consultada e por que não foi apenas copiada), estão documentadas no [ROADMAP.md](../../ROADMAP.md) e no [README.md](../../README.md#design-references-credit-where-its-due) — confirmado presente e correto no `master` atual, não duplicado aqui para evitar desatualização entre os dois lugares.
 
 ## Filesystem (issue futura, pós #8 e #9)
 
