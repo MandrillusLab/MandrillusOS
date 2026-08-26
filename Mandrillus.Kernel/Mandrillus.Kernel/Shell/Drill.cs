@@ -17,7 +17,7 @@ public static class Drill
 {
     private const string Prompt = "Drill> ";
     private const int InputBufferCapacity = 256;
-    private const int HistoryCapacity = 32;
+    internal const int HistoryCapacity = 32;
 
     // Mosa.Korlib (the corlib actually pulled in via Mosa.Runtime on the
     // BareMetal target) does not implement Dictionary<TKey,TValue> — only

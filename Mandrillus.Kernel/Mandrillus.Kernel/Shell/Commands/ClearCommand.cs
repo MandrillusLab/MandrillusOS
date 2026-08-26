@@ -1,10 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Mandrillus.Kernel.Shell.Commands
+namespace Mandrillus.Kernel.Shell.Commands;
+
+/// <summary>
+/// Built-in 'clear' command - clears the console screen.
+/// </summary>
+public static class ClearCommand
 {
-    internal class ClearCommand
+    public static void Execute(string[] args)
     {
+        Console.Clear();
     }
 }
