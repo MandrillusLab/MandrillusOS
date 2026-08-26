@@ -35,6 +35,10 @@ This isn't a "CRUD with a database" project. It exists to showcase skills that r
 
 Mandrillus OS isn't a fork of either — it's built on MOSA as its compilation toolchain, but the kernel architecture, design decisions, and application roadmap are developed independently.
 
+### A note on research and attribution
+
+Building Mandrillus involves regularly reading MOSA's (and, where relevant, Cosmos's) source code, documentation, and community discussion to understand what's already provided versus what needs to be built — see "Architecture: what's original vs. inherited" below. Where a design choice is informed by a specific source (source code, a reference implementation, public community discussion), it's cited directly in [ROADMAP.md](ROADMAP.md) rather than presented as if it were arrived at in isolation.
+
 ## Current status
 
 🚧 **Early stage** — kernel generated from the `mosakrnl` template, boot validated on **two different hypervisors**: QEMU and Hyper-V (Generation 1). The MOSA BareMetal kernel underneath is already handling memory management, interrupts, and device detection at boot (see below); Mandrillus-specific functionality — starting with an interactive shell — is the current focus of development. See [ROADMAP.md](ROADMAP.md) for full phase-by-phase tracking.
@@ -54,11 +58,20 @@ This was confirmed by cross-referencing the [MOSA documentation](https://www.mos
 | Physical & virtual memory management | Provided by MOSA BareMetal |
 | Keyboard input | Provided by MOSA BareMetal (`StandardKeyboard` device) |
 | Console / text output | Provided by MOSA BareMetal (`Console` API) |
-| Timer (PIT) | Under investigation — not yet confirmed either way |
 | Interactive shell | **Original Mandrillus work** |
 | Future: process model, filesystem, applications | **Original Mandrillus work** |
 
-Practically, this means Mandrillus's own engineering work begins at the application layer — starting with the interactive shell — rather than at the boot/driver layer. Full tracking of each item, including verification notes, lives in [ROADMAP.md](ROADMAP.md).
+Practically, this means Mandrillus's own engineering work begins with the interactive shell, rather than at the boot/memory/input layer. Full tracking of each item, including verification notes, lives in [ROADMAP.md](ROADMAP.md).
+
+> **On the PIT timer:** investigation confirmed MOSA BareMetal provides no PIT/timer driver, but its `Scheduler` already silently relies on IRQ0 at an unconfigured, BIOS-inherited frequency. Taking control of it is real original work — tracked as a **Phase 2** prerequisite (for preemptive scheduling), not Phase 1, since the shell has no dependency on it. Join the [MOSA Discord](https://discord.gg/tRNMn3npsv) for more information, and see below for how this was cross-referenced against Cosmos OS's PIT implementation as a design reference (not a code source). See [ROADMAP.md](ROADMAP.md) for full detail.
+
+### Design references (credit where it's due)
+
+Some Mandrillus design decisions are informed by reading other projects' source code, even when no code is reused. Documented here for transparency:
+
+| Decision | Informed by | Why it wasn't just copied |
+|---|---|---|
+| PIT timer design (Phase 2, Issue #9) | [Cosmos OS](https://github.com/CosmosOS/Cosmos)'s `Cosmos.HAL/PIT.cs` — specifically its `PITTimer`/`OnTrigger` callback-based software timer pattern | Cosmos and MOSA compile against incompatible low-level abstractions (`Cosmos.Core.IOPort` vs. MOSA's `IOPortReadWrite`) — the two frameworks are not interoperable at that layer. Cosmos's I/O port usage and timing sequence were also cross-checked against the canonical [xv6](https://github.com/mit-pdos/xv6-public) kernel's PIT implementation to confirm it follows standard practice, not a Cosmos-specific quirk. |
 
 ## Project structure
 

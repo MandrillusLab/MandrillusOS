@@ -35,6 +35,10 @@ Este não é um projeto de "CRUD com banco de dados". Ele existe para evidenciar
 
 O Mandrillus OS não é um fork de nenhum dos dois — é construído sobre o MOSA como toolchain de compilação, mas a arquitetura do kernel, as decisões de design e o roadmap de aplicações são desenvolvidos de forma independente.
 
+### Uma nota sobre pesquisa e atribuição
+
+Construir o Mandrillus envolve ler regularmente o código-fonte, a documentação e as discussões da comunidade do MOSA (e, quando relevante, do Cosmos) para entender o que já é fornecido versus o que precisa ser construído — veja "Arquitetura: o que é autoral vs. herdado" abaixo. Quando uma decisão de design é informada por uma fonte específica (código-fonte, uma implementação de referência, discussão pública da comunidade), ela é citada diretamente no [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md), em vez de apresentada como se tivesse sido alcançada isoladamente.
+
 ## Status atual
 
 🚧 **Fase inicial** — kernel gerado a partir do template `mosakrnl`, com boot validado em **dois hypervisors diferentes**: QEMU e Hyper-V (Generation 1). O kernel MOSA BareMetal por baixo já cuida de gerenciamento de memória, interrupções e detecção de dispositivos no boot (veja abaixo); a funcionalidade específica do Mandrillus — começando por um shell interativo — é o foco atual de desenvolvimento. Veja o [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md) para o acompanhamento completo por fase.
@@ -54,11 +58,20 @@ Isso foi confirmado cruzando a [documentação do MOSA](https://www.mosa-project
 | Gerenciamento de memória física e virtual | Fornecido pelo MOSA BareMetal |
 | Entrada de teclado | Fornecido pelo MOSA BareMetal (dispositivo `StandardKeyboard`) |
 | Console / saída de texto | Fornecido pelo MOSA BareMetal (API `Console`) |
-| Timer (PIT) | Em investigação — ainda não confirmado em nenhum dos sentidos |
 | Shell interativo | **Trabalho autoral do Mandrillus** |
 | Futuro: modelo de processos, sistema de arquivos, aplicações | **Trabalho autoral do Mandrillus** |
 
-Na prática, isso significa que o trabalho de engenharia autoral do Mandrillus começa na camada de aplicação — a partir do shell interativo — em vez da camada de boot/drivers. O acompanhamento completo de cada item, incluindo notas de verificação, está no [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md).
+Na prática, isso significa que o trabalho de engenharia autoral do Mandrillus começa pelo shell interativo, em vez da camada de boot/memória/entrada. O acompanhamento completo de cada item, incluindo notas de verificação, está no [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md).
+
+> **Sobre o timer PIT:** a investigação confirmou que o MOSA BareMetal não fornece nenhum driver de PIT/timer, mas seu `Scheduler` já depende silenciosamente do IRQ0 numa frequência não configurada, herdada do BIOS. Assumir controle disso é trabalho autoral real — rastreado como pré-requisito da **Fase 2** (para escalonamento preemptivo), não da Fase 1, já que o shell não depende disso. Junte-se ao canal do MOSA pelo [Discord](https://discord.gg/tRNMn3npsv) para mais informações, e cruze com a implementação de PIT do Cosmos OS como referência de design (não fonte de código — veja abaixo). Veja o [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md) para o detalhamento completo.
+
+### Referências de design (crédito onde é devido)
+
+Algumas decisões de design do Mandrillus são informadas pela leitura do código-fonte de outros projetos, mesmo quando nenhum código é reaproveitado. Documentado aqui por transparência:
+
+| Decisão | Informada por | Por que não foi simplesmente copiado |
+|---|---|---|
+| Design do timer PIT (Fase 2, Issue #9) | `Cosmos.HAL/PIT.cs` do [Cosmos OS](https://github.com/CosmosOS/Cosmos) — especificamente seu padrão de timer por software baseado em callback `PITTimer`/`OnTrigger` | Cosmos e MOSA compilam sobre abstrações de baixo nível incompatíveis (`Cosmos.Core.IOPort` vs. `IOPortReadWrite` do MOSA) — os dois frameworks não são interoperáveis nessa camada. O uso de portas de I/O e a sequência de temporização do Cosmos também foram cruzados com a implementação canônica de PIT do kernel [xv6](https://github.com/mit-pdos/xv6-public), para confirmar que segue prática padrão, não uma peculiaridade específica do Cosmos. |
 
 ## Estrutura do projeto
 
