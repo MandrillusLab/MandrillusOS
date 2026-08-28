@@ -26,10 +26,12 @@ public static class Program
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("MOSA x86 Kernel");
         Console.ForegroundColor = ConsoleColor.Blue;
-        Console.WriteLine("Mandrillus OS x86 Kernel");
-		Console.ResetColor();
+        Console.WriteLine($"Mandrillus OS Kernel v{MandrillusVersion.GetDisplayVersion()}");
+		Console.WriteLine($"Copyright (c) {MandrillusVersion.CopyrightYear} Mandrillus Systems.");
+		Console.WriteLine("Licensed under the MIT License.");
+        Console.ResetColor();
 
-		Drill.Start();
+        Drill.Start();
 
         for ( ; ; )
 		{ }
