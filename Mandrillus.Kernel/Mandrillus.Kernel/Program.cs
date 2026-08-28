@@ -1,6 +1,7 @@
 // Copyright (c) MOSA Project. Licensed under the New BSD License.
 // Copyright (c) Mandrillus OS. Licensed under the MIT License.
 using System;
+using Mandrillus.Kernel.Shell;
 using Mosa.Kernel.BareMetal;
 using Mosa.Runtime.Plug;
 
@@ -24,12 +25,15 @@ public static class Program
 		Console.Clear();
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("MOSA x86 Kernel");
-        Console.ForegroundColor= ConsoleColor.Blue;
-        Console.WriteLine("2026 - Mandrillus OS Kernel v0.0.1");
-		Console.ResetColor();
-		Console.WriteLine("Hello World!");
+        Console.ForegroundColor = ConsoleColor.Blue;
+        Console.WriteLine($"Mandrillus OS Kernel v{MandrillusVersion.GetDisplayVersion()}");
+		Console.WriteLine($"Copyright (c) {MandrillusVersion.CopyrightYear} Mandrillus Systems.");
+		Console.WriteLine("Licensed under the MIT License.");
+        Console.ResetColor();
 
-        for (; ; )
+        Drill.Start();
+
+        for ( ; ; )
 		{ }
 	}
 }
