@@ -54,3 +54,12 @@ Mandrillus não tem (e não terá) suíte de testes própria — usa o tooling d
 - ⚠️ **Correção sobre um detalhe prático (não sobre a decisão em si):** `ISADeviceDriverRegistryEntry.AutoLoad` **não é lido em nenhum lugar do código atual** (`grep` confirmou zero ocorrências de `.AutoLoad` fora da própria declaração da propriedade). O fluxo real de start automático (`ISADeviceService.cs` → `DeviceService.Initialize(...)`) passa `autoStart: true` **hardcoded**, ignorando esse campo. Não é necessário configurar `AutoLoad` ao registrar o driver do timer — pode ser omitido sem efeito prático.
 
 Decisão de design para Issue #9 (não é restrição, é escolha já fechada): ver [status.md](status.md#issue-9-pit).
+
+## Achados com potencial de contribuição upstream (registro consolidado)
+
+Dois achados técnicos desta investigação têm reprodução concreta o suficiente para virar Issue/PR no `mosa/MOSA-Project`, caso Leandro decida contribuir de volta:
+
+1. **`ArrayPlug.cs` — `Array.Copy` trava silenciosamente** (ver detalhes na seção [Korlib](#korlib) acima). Arquivo/linha exatos, reconhecimento do próprio time via `TODO`/`Broken`, reprodução em bare-metal via QEMU.
+2. **Regressão de empacotamento do `Mosa.Tools.Package`** (ver [Versionamento de dependências](tooling.md#versionamento) no tooling.md). Stack trace exato, causa raiz identificada (`Mosa.Compiler.Platforms` referenciado via `ProjectReference` não é copiado corretamente para o pacote NuGet publicado), confirmado persistente por vários meses e múltiplas versões (`1694` até pelo menos `1724`).
+
+Ambos são candidatos mais fortes que um simples "não funciona" — já chegam com causa raiz identificada e reprodução documentada.
