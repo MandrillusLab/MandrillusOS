@@ -4,13 +4,19 @@
 
 Use este arquivo para não sugerir algo já decidido, já descartado, ou fora de fase. Estado completo de fases/issues fica no [ROADMAP.md](../../ROADMAP.md) — aqui é o resumo de trabalho.
 
+## Prática de Git disciplinado
+
+O Mandrillus também serve para Leandro praticar Git disciplinado como habilidade (não só como necessidade do projeto): branches por feature, PR mesmo trabalhando sozinho, squash merge, mensagens no padrão Conventional Commits. Fluxo e regras completos em [versioning.md](versioning.md).
+
+**Testes automatizados (xUnit) ficam fora do escopo do Mandrillus, decisão fechada:** `Mandrillus.Kernel` compila contra `Mosa.Korlib` (corlib restrito), que não roda sob xUnit/.NET host normal. O próprio MOSA Project não usa xUnit convencional para testar código bare-metal — usa o tooling de teste próprio dele (`Mosa.UnitTests`, compilado e executado bare-metal/emulado). Mandrillus usa esse tooling do MOSA como está, sem arquitetura de teste própria. Prática de xUnit de verdade fica reservada para outro projeto, com runtime .NET completo — não misturar essa frente aqui.
+
 ## Fase atual
 
-Fase 1 quase fechada.
+Fase 1 fechada.
 
 - ✅ Herdados do MOSA BareMetal, não são trabalho original: GDT, IDT, gerência de memória, driver de teclado, saída de console/vídeo (Issues #1–4, #6–7)
-- 🔨 **Issue #8 (shell Drill) — único entregável original restante da Fase 1, em progresso ativo**
-- ⏭️ Issue #9 (PIT timer) inicia a Fase 2 — design fechado, implementação **não iniciada** (branch de investigação antiga já limpa; nova branch de implementação a ser criada quando o trabalho começar de fato)
+- ✅ **Issue #8 (shell Drill) — fechada.** Único entregável original da Fase 1, concluído.
+- ⏭️ Issue #9 (PIT timer) inicia a Fase 2 — design fechado, implementação **não iniciada**
 
 ## Issue #8 — Drill
 
@@ -22,6 +28,8 @@ Arquitetura já definida, sendo digitada manualmente linha a linha (escolha deli
 - Builtins: `help`, `clear`, `echo`, `history`
 - Localização: `Drill.cs` / `DrillCommand.cs` em **`Mandrillus.Kernel`**, namespace `Mandrillus.Kernel.Shell`, pasta `Shell/` — confirmado platform-agnostic
 - `Drill.Start()` chamado a partir de `EntryPoint()` em `Program.cs`, não de `Boot.cs`
+
+**Status: fechada, com correção pós-fechamento.** Implementação completa. Um bug foi encontrado depois de fechada: `echo` com argumentos travava o sistema por causa de uma falha silenciosa do `Array.Copy` no `Mosa.Korlib` (ver [constraints.md](constraints.md#korlib)). Corrigido substituindo `Array.Copy` por loop manual em `Dispatch()`, dentro de `Drill.cs`. Nenhum outro problema conhecido na implementação do Drill até o momento.
 
 ## Issue #9 — PIT {#issue-9-pit}
 

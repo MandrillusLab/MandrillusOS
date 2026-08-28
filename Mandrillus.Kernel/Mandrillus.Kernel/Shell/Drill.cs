@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root.
 using System;
 using System.Collections.Generic;
+using Mandrillus.Kernel.Shell.Commands;
 using Mosa.DeviceSystem.HardwareAbstraction;
 using Mosa.DeviceSystem.Keyboard;
 
@@ -28,9 +29,16 @@ public static class Drill
     // parallel lists instead of a hash map — fine at Phase 1's scale
     // (a handful of builtins); revisit if the command count grows enough
     // to justify a real hash table later.
-    private static readonly List<string> CommandNames = new List<string>();
-    private static readonly List<DrillCommand> CommandList = new List<DrillCommand>();
-    private static readonly string[] History = new string[HistoryCapacity];
+    //
+    // internal (not private): HelpCommand (Shell/Commands/HelpCommand.cs)
+    // reads CommandList to render the command listing. Kept internal rather
+    // than private since command handlers now live in separate files within
+    // the same Mandrillus.Kernel assembly - not exposed outside it.
+    internal static readonly List<string> CommandNames = new List<string>();
+    internal static readonly List<DrillCommand> CommandList = new List<DrillCommand>();
+
+    // internal: HistoryCommand reads this directly to list past entries.
+    internal static readonly string[] History = new string[HistoryCapacity];
 
     private static char[] _inputBuffer = new char[InputBufferCapacity];
     private static int _inputLenght;
@@ -42,8 +50,11 @@ public static class Drill
     // entry will be written. _historyCursor is -1 when not browsing history
     // (i.e. editing a fresh line), or an index into History while Up/Down is
     // being used to navigate past entries.
-    private static int _historyCount;
-    private static int _historyNext;
+    //
+    // internal: HistoryCommand needs _historyCount and _historyNext to know
+    // how many entries exist and where the ring buffer's "oldest" slot is.
+    internal static int _historyCount;
+    internal static int _historyNext;
     private static int _historyCursor = -1;
 
     /// <summary>
@@ -73,14 +84,14 @@ public static class Drill
             // HAL (Mosa.DeviceSystem) and Kernel.Keyboard (Mosa.Kernel.BareMetal)
             // are both platform-agnostic assemblies - this file has no x86-specific
             // compile-time dependency, which is why Drill shell lives in Mandrillus.Kernel
-            // rather than Mandrillus.Kernel.x86. The BEHAVIOR of HAL.Yeld() is what
+            // rather than Mandrillus.Kernel.x86. The BEHAVIOR of HAL.Yield() is what
             // varies per platform, not the code calling it: on x86 it resolves to
             // Native.Hlt() (confirmed via Mosa.Kernel.BareMetal.x86/Plug.cs),
             // safe regardless of Scheduler.Enabled - with the Scheduler inactive, HLT
             // simply wakes on the next interrupt and the loop re-checks; with it
             // active, this is what lets other threads actually run between
             // keystrokes. On x64/ARM32/ARM64 the equivalent plug is commented out in
-            // those platforms' PlatformPlug.cs, so HAL.Yeld() falls back to a
+            // those platforms' PlatformPlug.cs, so HAL.Yield() falls back to a
             // busy-wait no-op there - same source, degraded runtime behavior, not a
             // compile error. Revisit if Drill ever needs guaranteed yielding on
             // those platforms.
@@ -251,8 +262,8 @@ public static class Drill
         {
             newCursor = _historyCursor + direction;
 
-            if (newCursor  < 0)
-                newCursor = 0;
+            if (newCursor < 0)
+                newCursor = 0; // clamp at oldest entry
             else if (newCursor >= _historyCount)
             {
                 // Moved past the newest entry - return to a fresh empty line.
@@ -326,7 +337,18 @@ public static class Drill
 
         var commandName = tokens[0];
         var args = new string[tokens.Length - 1];
-        Array.Copy(tokens, 1, args, 0, args.Length);
+
+        // Mosa.Korlib's System.Array.Copy(Array, int, Array, int, int) hangs
+        // silently (no exception, no crash - execution simply stops) when
+        // called with a non-zero length on this bare-metal target. Confirmed
+        // via QEMU debugging on Issue #8 follow-up: Array.Copy(tokens, 1,
+        // args, 0, args.Length) hung whenever args.Length >= 1, while the
+        // same call with length 0 (e.g. the "help" command, no args)
+        // completed fine. Unlike the Dictionary<TKey,TValue>/string.Join
+        // gaps (missing members, caught at compile time), this one compiles
+        // and only fails at runtime - copying manually instead.
+        for (var i = 0; i < args.Length; i++) 
+            args[i] = tokens[i + 1];
 
         var index = IndexOfCommand(commandName);
 
@@ -373,63 +395,9 @@ public static class Drill
 
     private static void RegisterBuiltins()
     {
-        RegisterCommand("help", "Lists available commands.", OnHelp);
-        RegisterCommand("clear", "Clears the screen.", OnClear);
-        RegisterCommand("echo", "Prints back the given arguments.", OnEcho);
-        RegisterCommand("history", "Lists previous entered commands.", OnHistory);
-    }
-
-    private static void OnHelp(string[] args)
-    {
-        Console.WriteLine("Available commands:");
-        for (var i = 0; i < CommandList.Count; i++)
-        {
-            var command = CommandList[i];
-            Console.WriteLine($"  {CommandList[i].Name} - {CommandList[i].Description}");
-        }
-    }
-
-    private static void OnClear(string[] args)
-    {
-        Console.Clear();
-    }
-
-    private static void OnEcho(string[] args)
-    {
-        // Mosa.Korlib (the corlib actually pulled in via Mosa.Runtime on the
-        // BareMetal target) does not implement string.Join - only
-        // string.Concat and string.Format overloads (no separator support).
-        // string.Join exists solely in Mosa.TinyCoreLib, an alternative
-        // corlib this project does not reference - same cathegory of gap
-        // already documented for Dictionary<TKey, TValue> above. Joining
-        // manually with a loop instead.
-        var joined = string.Empty;
-
-        for (var i = 0; i < args.Length; i++)
-        {
-            if (i > 0)
-                joined += " ";
-
-            joined += args[i];
-        }
-
-        Console.WriteLine(joined);
-    }
-
-    private static void OnHistory(string[] args)
-    {
-        if (_historyCount == 0)
-        {
-            Console.WriteLine("(empty)");
-            return;
-        }
-
-        var oldestIndex = _historyCount < HistoryCapacity ? 0 : _historyNext;
-
-        for (var i = 0; i < _historyCount; i++)
-        {
-            var absoluteIndex = (oldestIndex + i) % HistoryCapacity;
-            Console.WriteLine("  " + (i + 1) + "  " + History[absoluteIndex]);
-        }
+        RegisterCommand("help", "Lists available commands.", HelpCommand.Execute);
+        RegisterCommand("clear", "Clears the screen.", ClearCommand.Execute);
+        RegisterCommand("echo", "Prints back the given arguments.", EchoCommand.Execute);
+        RegisterCommand("history", "Lists previous entered commands.", HistoryCommand.Execute);
     }
 }
