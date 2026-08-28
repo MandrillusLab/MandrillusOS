@@ -47,4 +47,10 @@ Mandrillus não tem (e não terá) suíte de testes própria — usa o tooling d
 - Portas canônicas: `0x40` (dado canal 0), `0x43` (comando). Sequência: modo → LSB → MSB.
 - MOSA não traz driver de PIT pronto. RTC (`0x70`/`0x71`) só dá hora/calendário, não gera tick periódico. `HAL.Sleep()` é `// TODO` vazio no framework.
 
+**Reverificação pré-implementação da Issue #9 (feita contra o `master` atual do MOSA, commit de maio/2026 — mais recente que a versão `2.6.1.1669` pinada):**
+
+- ✅ `Source/Mosa.Kernel.BareMetal.x86/IDT.cs`: o `case Scheduler.IRQ.Clock:` continua idêntico — `Interrupt?.Invoke(...)` seguido de `Scheduler.ClockInterrupt(...)`, sem mudanças. A Opção B (driver separado em paralelo, sem tocar no MOSA) continua tecnicamente válida.
+- ✅ `Source/Mosa.DeviceSystem/Services/DeviceService.cs`: `IRQDispatch` continua `List<Device>[MaxInterrupts]`; `AddInterruptHandler` continua fazendo `.Add()` (não sobrescreve) — múltiplos devices no mesmo IRQ, incluindo IRQ0, seguem suportados.
+- ⚠️ **Correção sobre um detalhe prático (não sobre a decisão em si):** `ISADeviceDriverRegistryEntry.AutoLoad` **não é lido em nenhum lugar do código atual** (`grep` confirmou zero ocorrências de `.AutoLoad` fora da própria declaração da propriedade). O fluxo real de start automático (`ISADeviceService.cs` → `DeviceService.Initialize(...)`) passa `autoStart: true` **hardcoded**, ignorando esse campo. Não é necessário configurar `AutoLoad` ao registrar o driver do timer — pode ser omitido sem efeito prático.
+
 Decisão de design para Issue #9 (não é restrição, é escolha já fechada): ver [status.md](status.md#issue-9-pit).
