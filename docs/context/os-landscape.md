@@ -4,9 +4,7 @@ Mapa de referência permanente do projeto. Inclui a tabela-resumo de linhagens d
 
 ## 1. Referências primárias
 
-Use estas como fonte primária de orientação, mantendo liberdade para
-incorporar materiais adicionais conforme necessário ao longo do
-desenvolvimento.
+Use estas como fonte primária de orientação, mantendo liberdade para incorporar materiais adicionais conforme necessário ao longo do desenvolvimento.
 
 ### **OSDev.org**
 
@@ -14,8 +12,6 @@ desenvolvimento.
 - C# — <https://wiki.osdev.org/C_Sharp>
 - C# Bare Bones — <https://wiki.osdev.org/C_Sharp_Bare_Bones>
 - Creating an Operating System — <https://wiki.osdev.org/Creating_an_Operating_System>
-- Write Your Own Operating System - <https://wyoos.org/>
-- Wyoos YouTube Channel - <https://www.youtube.com/@writeyourownoperatingsystem>
 
 ### **MOSA Project**
 
@@ -32,6 +28,20 @@ desenvolvimento.
 - ZeroSharp — <https://github.com/MichalStrehovsky/zerosharp>
 - SharpOS — <https://github.com/sharpos/SharpOS>
 - bflat — <https://github.com/bflattened/bflat/>
+
+### **Microsoft Research — Singularity e Midori**
+
+- Página do projeto Singularity — <https://www.microsoft.com/en-us/research/project/singularity/>
+- Artigos de pesquisa do Singularity — <https://www.microsoft.com/en-us/research/project/singularity/publications/>
+- Blog do Midori OS (Joe Duffy) — <https://joeduffyblog.com/2015/11/03/blogging-about-midori/> — relato em primeira pessoa sobre o Midori, sucessor interno do Singularity na Microsoft; não é open source, relato apenas em blog
+
+### **Referências de shell/scripting**
+
+- `dotnet-shell` — <https://dotnet-shell.github.io/> — shell compatível com scripts C# para .NET; relevante para o design do Drill como referência de sintaxe de shell "sabor C#" e convenções de REPL, independente das restrições bare-metal do Mandrillus
+
+### **Recursos de aprendizado**
+
+- Write Your Own Operating System — <https://wyoos.org/> — conceitos gerais de desenvolvimento de SO, desafios e armadilhas comuns, complementado pelo canal no YouTube — <https://www.youtube.com/@writeyourownoperatingsystem>
 
 ---
 
@@ -79,7 +89,7 @@ que popularidade bruta.
 | # | Projeto | Repo | Relevância |
 | --- | --- | --- | --- |
 | 17 | **WDK.NET / KernelSharp / ZeroKernel** | github.com/ZeroLP/WDK.NET, VollRagm/KernelSharp, ZeroLP/ZeroKernel | *Drivers* de modo kernel do Windows em C# via NativeAOT — não é um SO completo, mas mostra técnicas de remoção de runtime em outro contexto de código privilegiado |
-| 18 | **Singularity RDK** (Microsoft Research) | código-fonte arquivado da MS Research | Histórico: o projeto de pesquisa de SO gerenciado que mais influenciou toda essa categoria; Midori (sucessor) foi a inspiração citada na fundação do MOSA |
+| 18 | **Singularity RDK** (Microsoft Research) | página do projeto + artigos (ver Seção 1) | Descontinuado (projeto de pesquisa, ~2003-2010) o projeto de pesquisa de SO gerenciado que mais influenciou toda essa categoria; Midori (sucessor) foi a inspiração citada na fundação do MOSA |
 | 19 | **Forks universitários/de curso do Cosmos** | vários, buscar "university OS course C# Cosmos" | Vale uma busca dedicada futura se quiser comparar como programas acadêmicos estruturam projetos semelhantes |
 | 20 | **Pequenos projetos do topic `cosmos-os`** | Aqua, Sail OS, Nexon Kernel, Prism OS, e dezenas de outros em github.com/topics/cosmos-os | Majoritariamente projetos pequenos de aprendizado individual; como *conjunto* são um bom termômetro de erros comuns de iniciante, não valem investigação individual profunda |
 
