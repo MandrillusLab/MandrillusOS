@@ -14,6 +14,8 @@ desenvolvimento.
 - C# — <https://wiki.osdev.org/C_Sharp>
 - C# Bare Bones — <https://wiki.osdev.org/C_Sharp_Bare_Bones>
 - Creating an Operating System — <https://wiki.osdev.org/Creating_an_Operating_System>
+- Write Your Own Operating System - <https://wyoos.org/>
+- Wyoos YouTube Channel - <https://www.youtube.com/@writeyourownoperatingsystem>
 
 ### **MOSA Project**
 
