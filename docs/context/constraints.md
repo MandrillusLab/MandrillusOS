@@ -28,7 +28,7 @@ Gaps confirmados:
 
 **⚠️ Alerta preventivo — outros métodos do mesmo arquivo:** `ArrayPlug.cs` também contém `Clear`, `IndexOf` e `GetLowerBound`, todos com o mesmo padrão de implementação stub/incompleta (`GetLowerBound` sempre retorna `0` com `// TODO`; `IndexOf` sempre retorna `-1` com `// TODO`; `Clear` reusa a mesma aritmética de ponteiro do `Copy`, logo herda a mesma suspeita de bug). Nenhum desses foi exercitado/confirmado com problema real ainda — mas se algum dia `Array.Clear()`, `Array.IndexOf()` ou `array.GetLowerBound()` forem usados no Mandrillus e algo travar ou se comportar de forma errada sem mensagem de erro clara, suspeitar deste mesmo arquivo antes de qualquer outra hipótese.
 
-**Potencial de contribuição upstream:** este achado é um candidato forte para uma Issue/PR real no `mosa/MOSA-Project` — já existe reprodução concreta em bare-metal, arquivo/linha exatos (`Source/Mosa.Plug.Korlib/System/ArrayPlug.cs:13-52`), e reconhecimento do próprio time via comentários `TODO`/`Broken` de que o Plug precisa de correção. Mais promissor que um gap de API simplesmente ausente, já que já há consciência prévia do problema por parte do upstream.
+**Reportado upstream:** [Issue #1296](https://github.com/mosa/MOSA-Project/issues/1296) no `mosa/MOSA-Project` — ver [seção de contribuições upstream](#contribuicoes-upstream) abaixo para o registro consolidado.
 
 ## Testes automatizados
 
@@ -55,11 +55,11 @@ Mandrillus não tem (e não terá) suíte de testes própria — usa o tooling d
 
 Decisão de design para Issue #9 (não é restrição, é escolha já fechada): ver [status.md](status.md#issue-9-pit).
 
-## Achados com potencial de contribuição upstream (registro consolidado)
+## Contribuições upstream ao MOSA Project {#contribuicoes-upstream}
 
-Dois achados técnicos desta investigação têm reprodução concreta o suficiente para virar Issue/PR no `mosa/MOSA-Project`, caso Leandro decida contribuir de volta:
+Dois achados técnicos desta investigação tinham reprodução concreta o suficiente para virar Issue no `mosa/MOSA-Project` — **ambos já foram abertos por Leandro em 28/08/2026**, suas primeiras contribuições upstream ao projeto (não só consumo). Confirmados publicados (visíveis no canal `#github-activity` do Discord do MOSA); nenhuma issue duplicada/existente foi encontrada antes da publicação.
 
-1. **`ArrayPlug.cs` — `Array.Copy` trava silenciosamente** (ver detalhes na seção [Korlib](#korlib) acima). Arquivo/linha exatos, reconhecimento do próprio time via `TODO`/`Broken`, reprodução em bare-metal via QEMU.
-2. **Regressão de empacotamento do `Mosa.Tools.Package`** (ver [Versionamento de dependências](tooling.md#versionamento) no tooling.md). Stack trace exato, causa raiz identificada (`Mosa.Compiler.Platforms` referenciado via `ProjectReference` não é copiado corretamente para o pacote NuGet publicado), confirmado persistente por vários meses e múltiplas versões (`1694` até pelo menos `1724`).
+1. **[Issue #1296](https://github.com/mosa/MOSA-Project/issues/1296) — `ArrayPlug.cs`: `Array.Copy` trava silenciosamente** (ver detalhes na seção [Korlib](#korlib) acima). Arquivo/linha exatos, reconhecimento do próprio time via `TODO`/`Broken`, reprodução em bare-metal via QEMU.
+2. **[Issue #1295](https://github.com/mosa/MOSA-Project/issues/1295) — Regressão de empacotamento do `Mosa.Tools.Package`** (ver [Versionamento de dependências](tooling.md#versionamento) no tooling.md). Stack trace exato, causa raiz identificada (`Mosa.Compiler.Platforms` referenciado via `ProjectReference` não é copiado corretamente para o pacote NuGet publicado), confirmado persistente por vários meses e múltiplas versões (`1694` até pelo menos `1724`).
 
-Ambos são candidatos mais fortes que um simples "não funciona" — já chegam com causa raiz identificada e reprodução documentada.
+Ambas chegaram com causa raiz identificada e reprodução documentada, não como um simples "não funciona". Para checar o status atual de qualquer uma, buscar diretamente no GitHub em vez de assumir.

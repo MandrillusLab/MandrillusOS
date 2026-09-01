@@ -24,7 +24,7 @@ Quando uma decisão de design é informada por uma fonte externa específica (c�
 
 ## Onde estamos agora
 
-Fase 1 quase fechada. Único entregável original restante: **Issue #8 (shell Drill)**, em progresso ativo, sendo digitada manualmente — uma IA não deve gerar o arquivo inteiro, só discutir trechos.
+Fase 1 fechada. **Issue #8 (shell Drill)** concluída — implementação completa, incluindo a correção pós-fechamento do bug de `Array.Copy` (ver [docs/context/constraints.md](docs/context/constraints.md#korlib)). Foco atual: **Issue #9 (timer PIT)**, abrindo a Fase 2 — design já fechado e revalidado, implementação ainda não iniciada. Continua sendo digitado manualmente, linha a linha — uma IA não deve gerar o arquivo inteiro, só discutir trechos.
 
 Mandrillus também é usado para praticar Git disciplinado (branches, PR mesmo solo, squash merge). Testes automatizados (xUnit) **não** fazem parte do escopo deste projeto — decisão fechada, ver [docs/context/constraints.md](docs/context/constraints.md#testes-automatizados).
 

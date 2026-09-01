@@ -91,7 +91,7 @@ que popularidade bruta.
 | # | Projeto | Repo | Relevância |
 | --- | --- | --- | --- |
 | 17 | **WDK.NET / KernelSharp / ZeroKernel** | github.com/ZeroLP/WDK.NET, VollRagm/KernelSharp, ZeroLP/ZeroKernel | *Drivers* de modo kernel do Windows em C# via NativeAOT — não é um SO completo, mas mostra técnicas de remoção de runtime em outro contexto de código privilegiado |
-| 18 | **Singularity RDK** (Microsoft Research) | página do projeto + artigos (ver Seção 1) | Descontinuado (projeto de pesquisa, ~2003-2010) o projeto de pesquisa de SO gerenciado que mais influenciou toda essa categoria; Midori (sucessor) foi a inspiração citada na fundação do MOSA |
+| 18 | **Singularity** (Microsoft Research) | mirror do RDK + artigos (ver Seção 1) | Descontinuado (projeto de pesquisa, releases públicos ~2003–2008). O projeto de pesquisa de SO gerenciado que mais influenciou toda essa categoria — pioneiro em software-isolated processes (SIPs), contract-based channels e manifest-based programs. Não confundir com o Midori, reescrita do zero cujo código nunca foi liberado (ver Seção 1). |
 | 19 | **Forks universitários/de curso do Cosmos** | vários, buscar "university OS course C# Cosmos" | Vale uma busca dedicada futura se quiser comparar como programas acadêmicos estruturam projetos semelhantes |
 | 20 | **Pequenos projetos do topic `cosmos-os`** | Aqua, Sail OS, Nexon Kernel, Prism OS, e dezenas de outros em github.com/topics/cosmos-os | Majoritariamente projetos pequenos de aprendizado individual; como *conjunto* são um bom termômetro de erros comuns de iniciante, não valem investigação individual profunda |
 
@@ -112,3 +112,20 @@ depende de a qual família um dado projeto pertence.
 *Nota: FlingOS, AtomOS e RedPandaOS usam toolchains próprias independentes
 (nem Cosmos, nem MOSA, nem bflat) e não se encaixam perfeitamente nesta
 tabela — trate-os como pontos de dados isolados.*
+
+---
+
+## 4. Comunidades no Discord — participação confirmada
+
+Verificação de quais projetos do ranking (além do OSDev.org, uma referência
+primária) têm servidor ativo no Discord, e o status atual de participação
+do Leandro.
+
+| Comunidade | Servidor | Status |
+| --- | --- | --- |
+| **MOSA Project** | discord.gg/tRNMn3npsv | ✅ Membro (comunidade upstream primária) |
+| **Cosmos** | discord.com/invite/kwtBwv6jhD (linkado no README oficial) | ✅ Membro |
+| **AuraOS** | linkado na wiki do aura-systems/Aura-Operating-System | ✅ Membro |
+| **OSDev.org** | discord.gg/osdev (~14,7 mil membros) — comunidade geral de dev de SO/baixo nível, ligada à wiki do OSDev.org já presente na Seção 1 | ✅ Membro |
+| **ProtonOS** | — | ❌ Sem Discord — README declara explicitamente "this is currently a solo project" |
+| Abanu, SharpOS, tysos, PatienceOS, RoseOS, ZeroSharp, FlingOS, AtomOS, RedPandaOS, SphereOS, XenOS | — | Nenhum Discord encontrado (majoritariamente projetos solo ou inativos há muito tempo) |

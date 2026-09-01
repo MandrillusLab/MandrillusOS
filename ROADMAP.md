@@ -20,7 +20,7 @@ Status legend: ✅ Done · 🚧 In Progress · ⏳ Planned · 💭 Concept
 
 ## Phase 1 — Kernel Core (x86, 32-bit)
 
-Tracked as GitHub Issues under the **"Phase 1 — Kernel Core"** milestone.
+**Status: complete.** Tracked as GitHub Issues under the **"Phase 1 — Kernel Core"** milestone.
 
 > **Note:** Investigation confirmed (via [MOSA docs](https://www.mosa-project.org/a-dive-into-baremetal.html), the actual boot log, and direct inspection of `Source/Mosa.DeviceDriver/ISA/` in the MOSA repository) that most — but not all — of Phase 1's low-level infrastructure is already provided by the MOSA BareMetal kernel that `Mandrillus.Kernel.x86` builds on. Items below marked *(inherited)* are not original work.
 
@@ -30,11 +30,11 @@ Tracked as GitHub Issues under the **"Phase 1 — Kernel Core"** milestone.
 - ✅ Virtual memory / paging *(inherited from MOSA BareMetal)* — #4
 - ✅ Keyboard driver *(inherited from MOSA BareMetal — `StandardKeyboard`)* — #6
 - ✅ Text-mode video driver *(inherited from MOSA BareMetal — `Console` API)* — #7
-- ⏳ Minimal interactive shell (original work — ties keyboard + console output into a command loop) — #8
+- ✅ Minimal interactive shell (original work — ties keyboard + console output into a command loop; shipped as **Drill**) — #8
 
 > **Note:** the PIT timer item (originally #5 here) was moved to Phase 2 — see below. Investigation confirmed the shell has no dependency on timer work; the timer is a prerequisite of preemptive scheduling instead. Full reasoning in the note under Phase 2.
 >
-> **Heads-up for Issue #8:** public discussion on the [MOSA Discord](https://discord.gg/tRNMn3npsv) (`#general` channel) describes the BareMetal scheduler as cooperative, not preemptive — a blocking keyboard read call was reported to freeze the entire system because nothing forced a context switch while it blocked. The shell's main loop should follow the same pattern the community has converged on: check for a key without blocking indefinitely, rather than calling a blocking read directly. See the Phase 2 note below for the related timer/scheduler context.
+> **Issue #8 retrospective:** public discussion on the [MOSA Discord](https://discord.gg/tRNMn3npsv) (`#general` channel) described the BareMetal scheduler as cooperative, not preemptive — a blocking keyboard read call was reported to freeze the entire system because nothing forced a context switch while it blocked. Drill's main loop follows the pattern the community converged on: check for a key without blocking indefinitely (`Kernel.Keyboard.GetKeyPressed()`, non-blocking), rather than calling a blocking read directly. A separate bug was found and fixed after closure: `echo` with arguments hung the system due to a silent failure in `Mosa.Korlib`'s `Array.Copy` — see [docs/context/constraints.md](docs/context/constraints.md#korlib) for the full root-cause writeup. See the Phase 2 note below for the related timer/scheduler context.
 
 ## Phase 2 — System Services
 
@@ -48,7 +48,7 @@ Tracked as GitHub Issues under the **"Phase 1 — Kernel Core"** milestone.
 
 - 💭 Process/task management
 - 💭 Basic scheduler (cooperative → preemptive)
-- ⏳ PIT timer: program a known frequency and take control of the scheduler's clock tick (shared IRQ0/vector 0x20) — #9
+- ⏳ PIT timer: program a known frequency and take control of the scheduler's clock tick (shared IRQ0/vector 0x20) — #9 *(design closed, implementation not started — current focus)*
 - 💭 Inter-process communication
 - 💭 Filesystem support (start read-only, simple FS)
 - 💭 Device abstraction layer

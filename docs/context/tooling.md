@@ -24,6 +24,8 @@ System.IO.FileNotFoundException: Could not load file or assembly 'Mosa.Compiler.
 
 **Achado relacionado (mesma investigação):** os 4 gaps do Korlib já documentados (`Dictionary`, `string.Join`, `Array.Copy`, `DateTime.Now` — ver [constraints.md](constraints.md#korlib)) continuam presentes no `master` atual do MOSA (commit de maio/2026). Manter o pin não significa perder nenhuma correção desses gaps.
 
+**Reportado upstream:** [Issue #1295](https://github.com/mosa/MOSA-Project/issues/1295) no `mosa/MOSA-Project`, aberta em 28/08/2026 — ver lista consolidada de contribuições upstream em [constraints.md](constraints.md#contribuicoes-upstream).
+
 > Nota: o README público cita a versão mais recente do MOSA "no momento da escrita" (`2.6.1.1724` na última verificação) — esse número pode ficar desatualizado com o tempo; conferir contra o MOSA real antes de citar como atual.
 
 Template: `dotnet new mosakrnl` (via `dotnet new install Mosa.Templates`)
