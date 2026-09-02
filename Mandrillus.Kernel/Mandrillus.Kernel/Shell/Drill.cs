@@ -399,5 +399,6 @@ public static class Drill
         RegisterCommand("clear", "Clears the screen.", ClearCommand.Execute);
         RegisterCommand("echo", "Prints back the given arguments.", EchoCommand.Execute);
         RegisterCommand("history", "Lists previous entered commands.", HistoryCommand.Execute);
+        RegisterCommand("uptime", "Displays the system uptime.", UptimeCommand.Execute);
     }
 }
