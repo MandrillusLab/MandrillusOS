@@ -1,6 +1,7 @@
 // Copyright (c) MOSA Project. Licensed under the New BSD License.
 // Copyright (c) Mandrillus OS. Licensed under the MIT License.
 using System;
+using Mandrillus.Kernel.Hardware;
 using Mandrillus.Kernel.Shell;
 using Mosa.Kernel.BareMetal;
 using Mosa.Runtime.Plug;
@@ -30,6 +31,8 @@ public static class Program
 		Console.WriteLine($"Copyright (c) {MandrillusVersion.CopyrightYear} Mandrillus Systems.");
 		Console.WriteLine("Licensed under the MIT License.");
         Console.ResetColor();
+
+		HardwareSetup.RegisterPitTimer();
 
         Drill.Start();
 
