@@ -42,11 +42,18 @@ public class PitTimer : BaseDeviceDriver
     // chooses. Used to compute the divisor for a target frequency.
     private const uint PitBaseFrequancyHz = 1193182;
 
-    // Target tick rate for SystemTimer. 1000 Hz (1ms resolution) is a common,
-    // reasonable choice for a general-purpose system tick - adjust here if a
-    // different resolution is needed later. Must fit in the PIT's 16-bit divisor
-    // (i.e. PitBaseFrequencyHz / TargetFrequencyHz must be <= 65535).
-    private const uint TargetFrequencyHz = 1000;
+    // Target tick rate for SystemTimer. 250 Hz (4ms resolution) was chosen after
+    // empirically testing 100/250/500/1000 Hz on real hardware timing (QEMU+WHPX,
+    // wall-clock validated): the PIT+MOSA interrupt path has a fixed per-IRQ
+    // overhead that stays negligible up to ~250 Hz (~97% of ticks captured, same
+    // as 100 Hz) but degrades increasingly at higher rates — 500 Hz drops to
+    // ~90% captured, 1000 Hz drops to ~62-64% captured. 250 Hz was the highest
+    // frequency still on the flat/stable part of that curve. See
+    // constraints.md#hardware-do-pit-fatos-não-decisão-de-projeto for the full
+    // test data. Must fit in the PIT's 16-bit divisor (i.e. PitBaseFrequencyHz /
+    // TargetFrequencyHz must be <= 65535) — 250 Hz gives a divisor of ~4773,
+    // comfortably within range.
+    private const uint TargetFrequencyHz = 250;
 
     private Mosa.DeviceSystem.HardwareAbstraction.IOPortReadWrite data0Port;
     private Mosa.DeviceSystem.HardwareAbstraction.IOPortWrite commandPort;
