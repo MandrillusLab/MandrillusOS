@@ -3,7 +3,7 @@
 namespace Mandrillus.Kernel.Hardware;
 
 /// <summary>
-/// Driver for the PIT (Programable Interval Timer, 8253/8254 chip), channel 0.
+/// Driver for the PIT (Programmable Interval Timer, 8253/8254 chip), channel 0.
 /// Registers on IRQ0 alongside MOSA's own Scheduler.ClockInterrupt (Option B from
 /// the Issue #9 design investigation - confirmed via direct inspection of
 /// Mosa.Kernel.BareMetal.x86/IDT.cs and Mosa.DeviceSystem/Services/DeviceService.cs
