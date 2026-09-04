@@ -48,7 +48,7 @@ Legenda de status: ✅ Concluído · 🚧 Em andamento · ⏳ Planejado · 💭 
 
 - 💭 Gerenciamento de processos/tarefas
 - 💭 Escalonador básico (cooperativo → preemptivo)
-- ⏳ Timer PIT: programar uma frequência conhecida e assumir controle do tick de clock do scheduler (IRQ0/vetor 0x20 compartilhado) — #9 *(design fechado, implementação ainda não iniciada — foco atual)*
+- ✅ Timer PIT: programar uma frequência conhecida e assumir controle do tick de clock do scheduler (IRQ0/vetor 0x20 compartilhado) — #9 (250Hz; exposto via SystemTimer + comando `uptime` do Drill)
 - 💭 Comunicação entre processos (IPC)
 - 💭 Suporte a sistema de arquivos (começar somente leitura, FS simples)
 - 💭 Camada de abstração de dispositivos
