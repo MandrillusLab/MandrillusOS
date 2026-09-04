@@ -65,7 +65,19 @@ public class PitTimer : BaseDeviceDriver
         data0Port = Device.Resources.GetIOPortReadWrite(Data0Index, 0);
         commandPort = Device.Resources.GetIOPortWrite(CommandIndex, 0);
 
-        var divisor = PitBaseFrequencyHz / TargetFrequencyHz;
+        // Round to the neareast divisor instead of truncating (flagged in
+        // Issue #9 code review - GitHub Copilot's automated PR review):
+        // integer division alone (PitBaseFrequencyHz / TargetFrequencyHz)
+        // always rounds DOWN, which always biases the achieved frequency
+        // slightly HIGH (a smaller divisior means a higher tick rate). The
+        // standard "add half the divisor before dividing" trick rounds to
+        // the nearest integer instead, roughly halving the worst-case error.
+        // At 250 Hz this moves the divisor from 4772 (achieved ~250.04 Hz)
+        // to 4773 (achieved ~249.99 Hz) - a small change, but the correct
+        // one, and the achieved frequency (not just the requested target)
+        // is now what's actually stored in SystemTimer.FrequencyHz below.
+        var divisor = (PitBaseFrequencyHz + TargetFrequencyHz / 2) / TargetFrequencyHz;
+        var actualFrequencyHz = (PitBaseFrequencyHz + divisor / 2) / divisor;
 
         // Mode 2 (rate generator) + 16-bit binary, both LSB and MSB access.
         // Command byte layout (8253/8254): channel select | access mode | operating mode | BCD/binary.
@@ -76,8 +88,8 @@ public class PitTimer : BaseDeviceDriver
         data0Port.Write8((byte)(divisor & 0xFF));
         data0Port.Write8((byte)(divisor >> 8));
 
-        SystemTimer.FrequencyHz = TargetFrequencyHz;
-        SystemTimer.Ticks = 0;
+        SystemTimer.FrequencyHz = actualFrequencyHz;
+        SystemTimer.ResetTicks();
     }
 
     public override void Probe() => Device.Status = DeviceStatus.Available;
@@ -89,8 +101,10 @@ public class PitTimer : BaseDeviceDriver
         // Deliberately minimal: no memory allocation here, consistent with the
         // same caution already documented for Schedule-adjacent interrupt code
         // (see the Issue #9 IRQ handler investigation notes) - this runs on every
-        // IRQ0 tick, right alongside Schedule.ClockInterrupt.
-        SystemTimer.Ticks++;
+        // IRQ0 tick, right alongside Schedule.ClockInterrupt. IncrementTicks()
+        // itself is seqlock-protected (see SystemTimer.cs) so concurrent readers
+        // on the normal execution path never observe a torn 64-bit value.
+        SystemTimer.IncrementTicks();
 
         return true;
     }
