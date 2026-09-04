@@ -17,10 +17,10 @@ namespace Mandrillus.Kernel.Hardware;
 /// partial, has no extension hook, and runs entirely before Program.EntryPoint() (this
 /// project's own code) is ever called - so there's no way to add an entry to it from here.
 /// 
-/// Confirmed there's no simpler path: Mosa.Compiler.Framework's lug resolution
+/// Confirmed there's no simpler path: Mosa.Compiler.Framework's plug resolution
 /// (PlugSystem.CheckForPlug) returns the first matching [Plug] target it finds among
 /// ALL types across ALL referenced assemblies, with no duplicate detection - so a second
-/// [Plug("Mosa.Runtime.StartUp::KernelEntryPoint")] here would be fragiled at best, and
+/// [Plug("Mosa.Runtime.StartUp::KernelEntryPoint")] here would be fragile at best, and
 /// would require reimplementing MOSA's entire boot sequence (GDT, IDT, memory, scheduler,
 /// disk/keyboard drivers) just to add one timer. Not worth it for this.
 /// 
