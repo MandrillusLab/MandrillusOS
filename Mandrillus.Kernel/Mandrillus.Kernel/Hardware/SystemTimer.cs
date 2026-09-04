@@ -1,4 +1,6 @@
-﻿namespace Mandrillus.Kernel.Hardware;
+﻿using Mosa.DeviceSystem.HardwareAbstraction;
+
+namespace Mandrillus.Kernel.Hardware;
 
 /// <summary>
 /// System-wide ticker counter and uptime, driven by <see cref="PitTimer"/>'s IRQ0 handler.
@@ -10,48 +12,55 @@
 /// </summary>
 public static class SystemTimer
 {
-    // Backing store for Ticks, protected by a sequence lock (seqlock) rather
-    // than exposing the field directly: Ticks is a 64-bit value written a
-    // word at a time by PitTimer.OnInterrupt() (an IRQ handler) while normal
-    // code reads concurrently, and MOSA/Korlib expose no atomic
-    // primitives on this bare-metal x86-32 target. Whithout protection, a
-    // reader could observe a torn value if interrupted mid-read exactly when
-    // the low 32 bits wrap and carry into the high 32 bits (~every 2^32
-    // ticks, ~199 days at 250 Hz) - rare, but a real correctness gap flagged
-    // during Issue #9 code review (GitHub Copilot's automated PR review).
+    // Ticks is a 64-bit counter written a word at a time by PitTimer.OnInterrupt()
+    // (an IRQ handler) while normal code (e.g. UptimeCommand) reads it
+    // concurrently. On this 32-bit target, a 64-bit read/write is two 32-bit
+    // operations - a reader interrupted mid-read by IRQ0 could observe a torn
+    // value if unprotected (rare in practice - only visible when the low 32
+    // bits wrap and carry into the high 32 bits, ~every 2^32 ticks, ~199 days
+    // at 250Hz - but a real correctness gap, flagged during Issue #9 code
+    // review via GitHub Copilot's automated PR review).
     //
-    // Seqlock mechanics: PitTimer.OnInterrupt() os the ONLY writer. It bumps
-    // _sequence to odd before writing _ticksValue, then to even after. A
-    // reader loops: read sequence, read value, read sequence again; retries
-    // if the two sequence reads differ, od if rhe sqeuence is odd (a write
-    // is in progress). This assumes the writer always runs on the same
-    // (only) core Mandrillus currently targets - revisit if Mandrillus ever
-    // gains SMP supprot (see the APIC/HPET investigation notes in
-    // constraints.md for why that's not a near-term concern).
-    private static volatile uint _sequence;
+    // An earlier version of this fix used a seqlock, but Mosa.Korlib does not
+    // define System.Runtime.CompilerServices.IsVolatile - the marker type the
+    // C# compiler injects as a modreq for the `volatile` keyword - so `volatile`
+    // simply isn't usable on this target (CS0518: confirmed via a real build
+    // failure; a 7th confirmed Korlib/runtime gap, alongside Dictionary,
+    // string.Join, Array.Copy, double/float-to-string, and the
+    // ConvertU64ToR8/ConvertI64ToR8 compiler gap). Without volatile, a seqlock's
+    // correctness guarantee doesn't actually hold - the compiler is free to
+    // cache a "non-volatile" field read across loop iterations.
+    //
+    // Instead: protect only the READER side with HAL.DisableAllInterrupts()/
+    // EnableAllInterrupts() (Mosa.DeviceSystem.HardwareAbstraction.HAL -
+    // confirmed public, platform-agnostic, same plug-resolution pattern as
+    // HAL.Yield() -> resolves through Mosa.Kernel.BareMetal.Platform.Interrupt
+    // -> Native.Cli()/Sti() on x86). The WRITER (IncrementTicks(), called from
+    // within PitTimer.OnInterrupt()) does NOT wrap itself in disable/enable:
+    // it already runs inside an IRQ handler, where the CPU's interrupt-gate
+    // mechanism has interrupts masked for the duration - calling
+    // EnableAllInterrupts() there would prematurely re-enable interrupts
+    // before this ISR's own IRET, which is not something to do casually.
+    // HAL.DisableAllInterrupts()/EnableAllInterrupts() are a flat disable/
+    // enable (no save/restore of the prior IF state) - fine here since these
+    // critical sections are leaves, never nested.
     private static ulong _ticksValue;
 
     /// <summary>
     /// Raw tick count, incremented once per PIT IRQ0. Never reset - this is the
     /// single source of truth both for <see cref="UptimeSeconds"/> and for any
     /// interval measured via <see cref="StartMeasuring"/>/<see cref="ElapsedSeconds"/>.
-    /// Reads go through a seqlock (see the remarks on the backing fields above)
-    /// - never observes a torn value.
+    /// Reads are protected against torn values via a brief interrupt-disable
+    /// window (see the remarks on <see cref="_ticksValue"> above) - never observes
+    /// a partially-updated value.
     /// </summary>
     public static ulong Ticks
     {
         get
         {
-            uint seqBefore, seqAfter;
-            ulong value;
-
-            do
-            {
-                seqBefore = _sequence;
-                value = _ticksValue;
-                seqAfter = _sequence;
-            }
-            while (seqBefore != seqAfter || (seqBefore & 1) != 0);
+            HAL.DisableAllInterrupts();
+            var value = _ticksValue;
+            HAL.EnableAllInterrupts();
 
             return value;
         }
@@ -59,24 +68,27 @@ public static class SystemTimer
 
     /// <summary>
     /// Increments <see cref="Ticks"/> by one. Only <see cref="PitTimer.OnInterrupt"/>
-    /// should call this - it's the sigle writer this seqlock desing assumes.
+    /// should call this - it's the sigle writer, and dit's assumed to already
+    /// be running inside an IRQ handler (interrupts masked by the CPU for the
+    /// duration), so no additional locking happens here - see the remarkson
+    /// <see cref="_ticksValue"/> above for why.
     /// </summary>
     internal static void IncrementTicks()
     {
-        _sequence++;
         _ticksValue++;
-        _sequence++;
     }
 
     /// <summary>
     /// Resets <see cref="Ticks"/> to zero. Only <see cref="PitTimer.Initialize"/>
-    /// shoudl call this, once, during driver setup.
+    /// shoudl call this, once, during driver setup (before interrupts are
+    /// live) - no locking needed at that point, but wrapped for consistency
+    /// and safety against futurre callers.
     /// </summary>
     internal static void ResetTicks()
     {
-        _sequence++;
+        HAL.DisableAllInterrupts();
         _ticksValue = 0;
-        _sequence++;
+        HAL.EnableAllInterrupts();
     }
 
     /// <summary>
