@@ -44,12 +44,39 @@ Gaps confirmados:
 **Workaround:** nunca concatenar um `double`/`float` bruto numa string. Decompor em partes inteiras primeiro — mesmo padrão já usado pro `ConvertU64ToR8` no `SystemTimer.cs`. Exemplo (`UptimeCommand.cs`):
 
 ```csharp
-var wholeSeconds = SystemTimer.Ticks / SystemTimer.FrequencyHz;
-var remainderTicks = SystemTimer.Ticks % SystemTimer.FrequencyHz;
-Console.WriteLine("Uptime (seconds): " + wholeSeconds + "." + remainderTicks);
+var wholeSeconds = (uint)(SystemTimer.Ticks / SystemTimer.FrequencyHz);
+var remainderTicks = (uint)(SystemTimer.Ticks % SystemTimer.FrequencyHz);
+
+// remainderTicks é uma contagem de ticks (0..FrequencyHz-1), não uma fração
+// decimal de segundo — imprimir direto após o ponto (ex.: "7.36") é
+// matematicamente incorreto (achado do review automático do Copilot no PR
+// da Issue #9). Escalar pra centésimos via aritmética inteira pura, nunca
+// convertendo pra double.
+var hundredths = (remainderTicks * 100) / SystemTimer.FrequencyHz;
+var hundredthsStr = hundredths < 10 ? "0" + hundredths : hundredths.ToString();
+
+Console.WriteLine("Uptime (seconds): " + wholeSeconds + "." + hundredthsStr);
 ```
 
 **Potencial de contribuição upstream:** provavelmente o gap mais fundamental dos quatro documentados — formatação correta de ponto flutuante (arredondamento tipo Grisu/Dragon4) é genuinamente complexa, e não parece que ninguém implementou isso no `Mosa.Korlib` ainda. Candidato a uma quarta issue upstream, não levantado ainda.
+
+## Gap #5 — `volatile` indisponível (`System.Runtime.CompilerServices.IsVolatile` ausente)
+
+**Categoria: nova, distinta das anteriores** — não é API ausente (como `Dictionary`/`string.Join`), nem falha silenciosa em runtime (como `Array.Copy`/double-to-string), é um **tipo do runtime ausente que o próprio compilador C# depende para emitir código**.
+
+**Sintoma:** declarar qualquer campo `volatile` em `Mandrillus.Kernel` falha na compilação com:
+
+```code
+CS0518: Predefined type 'System.Runtime.CompilerServices.IsVolatile' is not defined or imported
+```
+
+**Causa raiz:** o compilador C# injeta um `modreq` (`IsVolatile`) em todo campo declarado `volatile`, como parte do contrato binário do CLI (ECMA-335) que garante ao runtime que a leitura/escrita não pode ser otimizada/cacheada. `Mosa.Korlib` não define esse tipo — descoberto tentando implementar um seqlock em `SystemTimer.cs` (Issue #9, proteção de leitura do contador `Ticks` de 64 bits contra leitura "rasgada" em alvo 32-bit). Ou seja: **a palavra-chave `volatile` simplesmente não é utilizável neste alvo**, do mesmo jeito que `Dictionary<TKey,TValue>` não é.
+
+**Implicação além do erro de compilação:** mesmo que esse tipo existisse, um seqlock sem `volatile` não teria garantia real de correção — o compilador ficaria livre para manter um campo "não-volátil" cacheado em registrador dentro de um loop, quebrando silenciosamente a premissa do algoritmo. Bom que travou em vez de compilar "errado".
+
+**Workaround adotado (`SystemTimer.cs`, Issue #9):** em vez de proteger a leitura via seqlock, usar `HAL.DisableAllInterrupts()`/`HAL.EnableAllInterrupts()` (`Mosa.DeviceSystem.HardwareAbstraction.HAL` — público, agnóstico de plataforma, mesmo padrão de resolução por plug do `HAL.Yield()`, resolvendo em cadeia até `Native.Cli()`/`Native.Sti()` em x86 via `Mosa.Kernel.BareMetal.Platform.Interrupt`) ao redor da leitura de `Ticks`. Só o **leitor** precisa da seção crítica — o **escritor** (`IncrementTicks()`, chamado de dentro do handler de IRQ) já roda com interrupções mascaradas pelo próprio mecanismo de gate do x86, então não se envolve `EnableAllInterrupts()` ali dentro (reabilitar interrupções no meio do atendimento da própria IRQ, antes do `IRET`, não é algo pra fazer sem necessidade real).
+
+**Potencial de contribuição upstream:** candidato razoável, mas de escopo maior que os outros — implicaria adicionar suporte a `modreq`/`IsVolatile` no toolchain do MOSA (compilador + Korlib), não só preencher uma lacuna de API. Não levantado ainda.
 
 ## Testes automatizados
 
@@ -81,7 +108,7 @@ Mandrillus não tem (e não terá) suíte de testes própria — usa o tooling d
 **Curva empírica completa de precisão de captura de ticks**, medida via testes cronometrados reais (QEMU+WHPX, aceleração de hardware):
 
 | Frequência-alvo | % de ticks capturados | Desvio |
-|---|---|---|
+| --- | --- | --- |
 | 100 Hz | ~97,3% | ~2,7% |
 | **250 Hz (escolhida)** | **~97,2%** | **~2,8%** |
 | 500 Hz | ~89,7% | ~10,3% |
@@ -89,11 +116,14 @@ Mandrillus não tem (e não terá) suíte de testes própria — usa o tooling d
 
 **A curva não é linear** — precisão fica estável até `250 Hz`, degrada moderadamente em `500 Hz`, e despenca em `1000 Hz`. Esse formato (plano → inclinação → queda acentuada) é consistente com um **overhead fixo por IRQ** (rodar `PitTimer.OnInterrupt()` + `Scheduler.ClockInterrupt()` + entrada/saída de ISR/EOI a cada disparo) que é irrelevante em frequências baixas, mas consome fatia crescente do orçamento de tempo por tick conforme a frequência sobe. **Mecanismo exato ainda não isolado** — só a natureza dependente-de-frequência foi comprovada empiricamente, com 4 pontos de dados.
 
-**Decisão:** `250 Hz` — mesma precisão de `100 Hz` (~97%), mas granularidade 2,5x mais fina (4ms vs 10ms), e confortavelmente na parte estável/segura da curva. Divisor resultante: `1193182 / 250 ≈ 4773` (bem dentro do limite de 16 bits).
+**Decisão:** `250 Hz` — mesma precisão de `100 Hz` (~97%), mas granularidade 2,5x mais fina (4ms vs 10ms), e confortavelmente na parte estável/segura da curva. Divisor: `1193182 / 250 ≈ 4773` (bem dentro do limite de 16 bits).
+
+**Nota pós-review:** a implementação inicial truncava essa divisão; corrigido posteriormente (review automático do Copilot no PR) para arredondar pro divisor mais próximo em vez de truncar, e `SystemTimer.FrequencyHz` passou a armazenar a frequência *real* resultante do divisor escolhido, não apenas o alvo nominal de `250` — diferença de ~0,015% neste caso específico, desprezível frente ao erro de medição de ~3% já documentado na tabela acima, mas a forma correta de calcular.
 
 **Como o teste foi feito:** `TargetFrequencyHz` alterado manualmente em `PitTimer.cs` pra cada valor testado, seguido de teste cronometrado (`uptime` → cronômetro real → `uptime` de novo, com janelas de 30-60s) rodando via `qemu-system-x86_64 -accel whpx -cpu qemu32,...` (ver nota sobre WHPX no `tooling.md`).
 
 **Itens em aberto, não bloqueiam o fechamento da Issue #9:**
+
 - Mecanismo exato da perda de interrupções em frequências altas — não investigado a fundo; candidato a issue upstream se algum dia for relevante.
 - Regressão do teclado no Hyper-V (não relacionada ao PIT — confirmado testando sem `HardwareSetup.RegisterPitTimer()` ativo, problema persiste) — rastreada separadamente, prioridade baixa.
 
@@ -106,6 +136,7 @@ Mandrillus não tem (e não terá) suíte de testes própria — usa o tooling d
 **Registro do driver — sem hook oficial no `Setup.cs` do MOSA:** confirmado por inspeção completa (código-fonte, exemplos `CoolWorld`/`TestWorld`/`Starter`, todos os 4 drivers ISA existentes) que **não há precedente nem extensão oficial** para adicionar um driver customizado à lista fixa de `Mosa.DeviceDriver.Setup.GetDeviceDriverRegistryEntries()` — ela não é `partial`, não tem callback, e nenhum projeto de exemplo do MOSA jamais precisou estendê-la. Solução adotada: chamar diretamente `DeviceService.Initialize(DeviceDriverRegistryEntry, ...)` — o mesmo método público que `ISADeviceService` usa internamente — a partir de `Program.cs`, depois que `Kernel.ServiceManager` já existe (ver `Hardware/HardwareSetup.cs`). Reproduz o pipeline completo (`Setup → Initialize → Probe → Start → AddInterruptHandler`) sem tocar em código do MOSA nem duplicar lógica.
 
 **Validação de design contra fonte externa (OSDev Wiki, não MOSA/Cosmos):** o artigo [Programmable Interval Timer](https://wiki.osdev.org/Programmable_Interval_Timer) confirma várias decisões já tomadas de forma independente:
+
 - Canal 0 é o único canal do PIT conectado a uma IRQ — valida a escolha de `IRQ0`.
 - Mode 2 (rate generator) é escolha legítima e documentada para ganhar precisão de frequência, ainda que Mode 3 seja mais comum em BIOS/SOs — bate com a decisão já tomada em `PitTimer.cs`.
 - `1000 Hz` (divisor `~1193`) — a frequência originalmente cogitada — **coincidia com o padrão do kernel Linux moderno**, mas foi descartada na prática após a curva empírica revelar perda significativa de ticks nessa faixa; `250 Hz` foi a escolha final (ver seção acima).
@@ -117,7 +148,7 @@ Mandrillus não tem (e não terá) suíte de testes própria — usa o tooling d
 **Confirmado: nenhum desses timers "mais modernos" é uma alternativa viável hoje no MOSA** (investigado como resposta direta à ressalva acima, considerando também o plano futuro de x64 do Mandrillus):
 
 | Timer | Estado no MOSA |
-|---|---|
+| --- | --- |
 | HPET | Inexistente — zero referências em todo o código-fonte |
 | ACPI Timer (PM Timer) | `FADT.cs` tem os offsets corretos do campo, mas nada nunca lê esse valor |
 | APIC Timer | `LocalAPIC.cs` só habilita o registro base e envia EOI — nenhum código toca nos registros de timer do APIC (`0x320`/`0x380`/`0x390`) |
@@ -130,6 +161,8 @@ Mandrillus não tem (e não terá) suíte de testes própria — usa o tooling d
 
 Decisão de design para Issue #9 (não é restrição, é escolha já fechada): ver [status.md](status.md#issue-9-pit).
 
+**Status final:** Issue #9 fechada. PR revisado (incluindo review automático do Copilot, que identificou o bug de formatação do `uptime` e a questão de atomicidade de `Ticks` — ver [Gap #5](#gap-5-volatile-indisponível-systemruntimecompilerservicesisvolatile-ausente) acima para a resolução), corrigido, testado no QEMU e mesclado em `master`.
+
 ## ⚠️ Bug do compilador MOSA: `ulong`/`long` → `double` em x86
 
 **Categoria diferente dos gaps anteriores** — não é biblioteca (`Korlib`) nem colisão de nome (C#), é uma lacuna real de *lowering* no próprio compilador `Mosa.Compiler.x86`.
@@ -137,6 +170,7 @@ Decisão de design para Issue #9 (não é restrição, é escolha já fechada): 
 **Sintoma:** compilar `(double)Ticks / FrequencyHz` (onde `Ticks` é `ulong`) falha com `Missing Code Transformation: IR.ConvertU64ToR8`. Aconteceu em `SystemTimer.cs` (`UptimeSeconds`, `ElapsedSeconds`), Issue #9.
 
 **Causa raiz confirmada por inspeção direta da fonte:**
+
 - `IR.ConvertU64ToR8` (`ulong → double`) **não tem nenhum transform real em nenhuma plataforma** do MOSA (x86, x64, ARM32) — só existe um constant-folding (`Source/Mosa.Compiler.Framework/Transforms/Optimizations/Auto/ConstantFolding/ConvertU64ToR8.cs`), que só ajuda valores literais conhecidos em tempo de compilação, não valores de runtime como `Ticks`.
 - **Achado mais sério**: mesmo `ConvertI64ToR8` (`long → double`, com sinal), que **tem** transform em x86 (`Source/Mosa.Compiler.x86/Transforms/BaseIR/ConvertI64ToR8.cs`), está **incompleto** — divide o valor em metades de 32 bits e **descarta a metade alta**, convertendo só a parte baixa via `Cvtsi2sd32`. Ou seja, `(double)(long)Ticks` compilaria, mas retornaria **resultado silenciosamente errado** acima de `~2^31` (~24,9 dias de uptime a 1000 Hz) — sem erro, sem crash, só valor errado.
 - Confirmado que o x64 equivalente é correto (`Cvtsi2sd64`, registrador completo de 64 bits) — o bug é específico do x86 32-bit.
@@ -150,10 +184,12 @@ Decisão de design para Issue #9 (não é restrição, é escolha já fechada): 
 
 ## Achados com potencial de contribuição upstream (registro consolidado)
 
-Três achados técnicos desta investigação têm reprodução concreta o suficiente para virar Issue/PR no `mosa/MOSA-Project`, caso Leandro decida contribuir de volta:
+Cinco achados técnicos desta investigação têm reprodução concreta o suficiente para virar Issue/PR no `mosa/MOSA-Project`, caso Leandro decida contribuir de volta:
 
 1. **`ArrayPlug.cs` — `Array.Copy` trava silenciosamente** (ver detalhes na seção [Korlib](#korlib) acima). Arquivo/linha exatos, reconhecimento do próprio time via `TODO`/`Broken`, reprodução em bare-metal via QEMU.
 2. **Regressão de empacotamento do `Mosa.Tools.Package`** (ver [Versionamento de dependências](tooling.md#versionamento) no tooling.md). Stack trace exato, causa raiz identificada (`Mosa.Compiler.Platforms` referenciado via `ProjectReference` não é copiado corretamente para o pacote NuGet publicado), confirmado persistente por vários meses e múltiplas versões (`1694` até pelo menos `1724`).
-3. **`ConvertU64ToR8`/`ConvertI64ToR8` ausente/truncado em x86** (ver seção acima). O mais forte dos três — vem com causa raiz precisa **e** evidência histórica de que a equipe já sabe como resolver (mesma técnica usada com sucesso na direção oposta, `R8ToI8`).
+3. **`ConvertU64ToR8`/`ConvertI64ToR8` ausente/truncado em x86** (ver seção acima). O mais forte dos cinco — vem com causa raiz precisa **e** evidência histórica de que a equipe já sabe como resolver (mesma técnica usada com sucesso na direção oposta, `R8ToI8`).
+4. **Formatação `double`/`float` → `string` ausente em `Mosa.Korlib`** (ver [Gap #4](#gap-4---formatação-doublefloat--string-inexistente) acima). Causa raiz confirmada (nenhum `ToString()` próprio em `Double`/`Single`), mas escopo de implementação genuinamente complexo (arredondamento correto de ponto flutuante).
+5. **`System.Runtime.CompilerServices.IsVolatile` ausente, tornando `volatile` inutilizável** (ver [Gap #5](#gap-5-volatile-indisponível-systemruntimecompilerservicesisvolatile-ausente) acima). Escopo maior que os demais — envolveria suporte a `modreq` no toolchain, não só uma lacuna de API isolada.
 
-Todos os três são candidatos mais fortes que um simples "não funciona" — já chegam com causa raiz identificada e reprodução documentada.
+Todos os cinco são candidatos mais fortes que um simples "não funciona" — já chegam com causa raiz identificada e reprodução documentada.

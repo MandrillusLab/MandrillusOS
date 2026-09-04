@@ -8,7 +8,7 @@ Pacotes NuGet MOSA pinados em **`2.6.1.1669`** — `Mosa.Platform`, `Mosa.Platfo
 
 **Regressão CONFIRMADA com evidência direta (não mais só inferida por data):** testado atualizando os 4 pacotes via NuGet Package Manager do Visual Studio (`Mosa.Platform`/`Mosa.DeviceSystem`/`Mosa.Platform.x86` → `2.6.1.1698`; `Mosa.Tools.Package` → `2.6.1.1724`, a mais recente disponível em ambos os casos). Build/restore passaram normalmente, mas rodar `Mosa.Tool.Launcher.Console.exe` falhou com:
 
-```
+```code
 System.IO.FileNotFoundException: Could not load file or assembly 'Mosa.Compiler.Platforms, Version=2.6.1.0, Culture=neutral, PublicKeyToken=null'.
    at Mosa.Tool.Launcher.Console.Program.RegisterPlatforms() in .../Program.cs:line 101
    at Mosa.Tool.Launcher.Console.Program.Main(String[] args) in .../Program.cs:line 19
@@ -35,9 +35,11 @@ Template: `dotnet new mosakrnl` (via `dotnet new install Mosa.Templates`)
 Validados: QEMU (nativo via Launcher) e Hyper-V Geração 1 (Secure Boot desligado).
 
 Hyper-V exige conversão manual `.img` → `.vhd`:
-```
+
+```code
 qemu-img convert -f raw -O vpc
 ```
+
 (dropdown VHD do Launcher está quebrado na 1669)
 
 Referência completa de flags do `Mosa.Tool.Launcher.Console`: ver `MOSA-Launcher-CLI-Reference.md` no repositório.
@@ -46,10 +48,13 @@ Referência completa de flags do `Mosa.Tool.Launcher.Console`: ver `MOSA-Launche
 
 - Cabeçalho só em arquivos-âncora (`Program.cs`, `Boot.cs`-nível de entry point) — não em todo arquivo
 - Formato:
-  ```
-  // Copyright © [ano] Leandro Vieira / Mandrillus Systems
+
+  ```code
+  // Copyright (c) [ano] Leandro Vieira / Mandrillus Systems
   // Licensed under the MIT License. See LICENSE file in the project root.
   ```
+
+- Usa `(c)` em vez do símbolo `©` — mudança intencional (a partir do PR da Issue #9), por motivos de compatibilidade
 - Ano = quando aquele arquivo específico foi criado (não a data de fundação 2019 da marca)
 - `THIRD-PARTY-LICENSES.md` preserva as datas originais de copyright do MOSA (New BSD License) intocadas
 

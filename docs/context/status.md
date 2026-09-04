@@ -16,7 +16,7 @@ Fase 1 fechada.
 
 - ✅ Herdados do MOSA BareMetal, não são trabalho original: GDT, IDT, gerência de memória, driver de teclado, saída de console/vídeo (Issues #1–4, #6–7)
 - ✅ **Issue #8 (shell Drill) — fechada.** Único entregável original da Fase 1, concluído.
-- ⏭️ Issue #9 (PIT timer) inicia a Fase 2 — design fechado e revalidado, implementação **não iniciada**
+- ✅ **Issue #9 (PIT timer) — fechada.** 250Hz calibrado empiricamente, `SystemTimer` + comando `uptime` implementados, testado no QEMU, mesclado em `master`.
 
 ## Issue #8 — Drill
 
@@ -43,12 +43,18 @@ Decisão de design **fechada**, revalidada contra o `master` atual do MOSA antes
 
 **Implementação (concluída):**
 
-- `Hardware/PitTimer.cs`: driver `BaseDeviceDriver`, Mode 2, `250 Hz`, incrementa `SystemTimer.Ticks` em `OnInterrupt()` — implementado e compilando
+- `Hardware/PitTimer.cs`: driver `BaseDeviceDriver`, Mode 2, `250 Hz` (divisor arredondado pro mais próximo em vez de truncado; frequência real medida é armazenada em `SystemTimer.FrequencyHz`, não apenas o alvo nominal) — implementado e compilando
 - `Hardware/SystemTimer.cs`: API pública (`Ticks`, `FrequencyHz`, `UptimeSeconds`, `StartMeasuring()`/`ElapsedSeconds()`) — sem callback/timer agendado, deliberadamente fora de escopo por ora — implementado e compilando
 - `Hardware/HardwareSetup.cs`: registro manual via `DeviceService.Initialize(...)`, já que `Mosa.DeviceDriver.Setup.GetDeviceDriverRegistryEntries()` não tem hook de extensão (confirmado por inspeção completa — sem precedente em `CoolWorld`/`TestWorld`/`Starter`). Chamado a partir de `Program.EntryPoint()`, antes de `Drill.Start()`
 - ✅ Testado no QEMU: boot limpo; `uptime` crescente; sem regressões em `help`/`clear`/`echo`/`history`
 
-**Status: implementado e validado no QEMU; pronto para fechamento.**
+**Correções pós-review (GitHub Copilot, PR automático):**
+
+- Formato de saída do `uptime` estava matematicamente incorreto — imprimia o resto bruto de ticks como se fosse a fração decimal do segundo (ex.: `"7.36"` quando o valor real era `7.144s`). Corrigido escalando `remainderTicks` pra centésimos via aritmética inteira pura (`remainderTicks * 100 / FrequencyHz`), sem tocar em `double`.
+- Divisor do PIT era truncado (sempre arredondava a frequência real pra cima); trocado por arredondamento pro mais próximo, com a frequência real resultante armazenada em `SystemTimer.FrequencyHz`.
+- Proteção contra leitura "rasgada" de `SystemTimer.Ticks` (contador de 64 bits escrito por um handler de IRQ, lido por código normal, em alvo de 32 bits): tentativa inicial usou um seqlock com `volatile`, mas **confirmado que `Mosa.Korlib` não define `System.Runtime.CompilerServices.IsVolatile`** — `volatile` não compila nesse alvo (`CS0518`), um 7º gap confirmado do Korlib/runtime. Resolvido com `HAL.DisableAllInterrupts()`/`HAL.EnableAllInterrupts()` (`Mosa.DeviceSystem.HardwareAbstraction.HAL` — público, agnóstico de plataforma, mesmo padrão de resolução por plug do `HAL.Yield()`) protegendo só a leitura; o escritor (`IncrementTicks()`, chamado de dentro do handler de IRQ) já roda com interrupções mascaradas pelo próprio mecanismo de gate do x86.
+
+**Status: fechada. PR revisado (incluindo review automático do Copilot), corrigido, testado no QEMU e mesclado em `master`.**
 
 **Proveniência da investigação:** a tabela completa de fontes (código MOSA, discussões do Discord, Cosmos+xv6) que embasou essa decisão, e a seção de atribuição de design (por que cada referência foi consultada e por que não foi apenas copiada), estão documentadas no [ROADMAP.md](../../ROADMAP.md) e no [README.md](../../README.md#design-references-credit-where-its-due) — confirmado presente e correto no `master` atual, não duplicado aqui para evitar desatualização entre os dois lugares.
 
