@@ -39,7 +39,7 @@ Decisão de design **fechada**, revalidada contra o `master` atual do MOSA antes
 - Reverificado contra `Source/Mosa.Kernel.BareMetal.x86/IDT.cs` e `Source/Mosa.DeviceSystem/Services/DeviceService.cs` — nenhuma mudança relevante desde a investigação original; decisão continua tecnicamente válida
 - `ISADeviceDriverRegistryEntry.AutoLoad` não precisa ser configurado — confirmado que essa propriedade não é lida em nenhum lugar do fluxo de start automático atual (ver constraints.md)
 - Reverificar novamente contra `IDT.cs`/`DeviceService.cs` a cada bump de versão do MOSA
-- **Validado contra fonte externa independente** (OSDev Wiki, não MOSA/Cosmos) — confirma canal 0/IRQ0, Mode 2, e a frequência-alvo de `1000 Hz` (coincide com o padrão do Linux moderno); traz também uma ressalva nova sobre obsolescência do PIT em hardware real moderno. Detalhe completo em [constraints.md](constraints.md#hardware-do-pit-fatos-não-decisão-de-projeto).
+- **Validado contra fonte externa independente** (OSDev Wiki, não MOSA/Cosmos) — confirma canal 0/IRQ0 e Mode 2; a fonte cita `1000 Hz` como frequência clássica (Linux moderno), mas o Mandrillus adotou `250 Hz` pela curva empírica de captura de ticks. Detalhe completo em [constraints.md](constraints.md#hardware-do-pit-fatos-não-decisão-de-projeto).
 
 **Implementação (concluída):**
 
