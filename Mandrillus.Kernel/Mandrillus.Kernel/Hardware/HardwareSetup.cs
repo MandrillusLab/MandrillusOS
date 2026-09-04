@@ -37,7 +37,7 @@ public static class HardwareSetup
     /// Registers and starts <see cref="PitTimer"/> on IRQ0, alongside MOSA's own
     /// Scheduler.ClockInterrupt (Option B from the Issue #9 design - see
     /// constraints.md#hardware-do-pit-fatos-não-decisão-de-projeto). Call once from
-    /// Progam.cs's EntryPoint(), after Boot.cs has handed off control - same timing
+    /// Program.cs's EntryPoint(), after Boot.cs has handed off control - same timing
     /// convention as Drill.Start().
     /// </summary>
     public static void RegisterPitTimer()

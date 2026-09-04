@@ -24,7 +24,7 @@ namespace Mandrillus.Kernel.Hardware;
 /// Hardware constraint (not an architecture choice): the 8253/8254 has a single
 /// physical channel 0 - this driver and MOSA's Scheduler.ClockInterrupt share the
 /// same underlying frequency. This is unrelated to 32-bit vs 64-bit or BIOS
-/// concenrns; it's a property of the chip itself.
+/// concerns; it's a property of the chip itself.
 /// </summary>
 public class PitTimer : BaseDeviceDriver
 {
@@ -40,7 +40,7 @@ public class PitTimer : BaseDeviceDriver
     // The PIT's base oscillator frequency (Hz). This is the well-known hardware
     // constant for the 8253/8254 chip (~1.193282 MHz), not something Mandrillus
     // chooses. Used to compute the divisor for a target frequency.
-    private const uint PitBaseFrequancyHz = 1193182;
+    private const uint PitBaseFrequencyHz = 1193182;
 
     // Target tick rate for SystemTimer. 250 Hz (4ms resolution) was chosen after
     // empirically testing 100/250/500/1000 Hz on real hardware timing (QEMU+WHPX,
@@ -65,7 +65,7 @@ public class PitTimer : BaseDeviceDriver
         data0Port = Device.Resources.GetIOPortReadWrite(Data0Index, 0);
         commandPort = Device.Resources.GetIOPortWrite(CommandIndex, 0);
 
-        var divisor = PitBaseFrequancyHz / TargetFrequencyHz;
+        var divisor = PitBaseFrequencyHz / TargetFrequencyHz;
 
         // Mode 2 (rate generator) + 16-bit binary, both LSB and MSB access.
         // Command byte layout (8253/8254): channel select | access mode | operating mode | BCD/binary.
@@ -86,7 +86,7 @@ public class PitTimer : BaseDeviceDriver
 
     public override bool OnInterrupt()
     {
-        // Deriberately minimal: no memory allocation here, consistent with the
+        // Deliberately minimal: no memory allocation here, consistent with the
         // same caution already documented for Schedule-adjacent interrupt code
         // (see the Issue #9 IRQ handler investigation notes) - this runs on every
         // IRQ0 tick, right alongside Schedule.ClockInterrupt.

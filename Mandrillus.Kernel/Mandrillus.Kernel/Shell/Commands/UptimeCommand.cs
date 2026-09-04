@@ -7,7 +7,7 @@ public static class UptimeCommand
 {
     public static void Execute(string[] args)
     {
-        Console.WriteLine("Ticks: " + SystemTimer.Ticks);
+        Console.WriteLine("Ticks: " + (uint)SystemTimer.Ticks);
         Console.WriteLine("Frequency (Hz): " + SystemTimer.FrequencyHz);
 
         // Mosa.Korlib has no double/float-to-string formatting anywhere
@@ -15,8 +15,14 @@ public static class UptimeCommand
         // exhaustive search found nothing). "text" + double silently hangs
         // via ValueType.ToString() -> GetType().ToString() (boxing +
         // reflection). Format manually from integer parts instead.
-        var wholeSeconds = SystemTimer.Ticks / SystemTimer.FrequencyHz;
-        var remainderTicks = SystemTimer.Ticks % SystemTimer.FrequencyHz;
+        if (SystemTimer.FrequencyHz == 0)
+        {
+            Console.WriteLine("Uptime: unknown (frequency is zero)");
+            return;
+        }
+
+        var wholeSeconds = (uint)(SystemTimer.Ticks / SystemTimer.FrequencyHz);
+        var remainderTicks = (uint)(SystemTimer.Ticks % SystemTimer.FrequencyHz);
 
         Console.WriteLine("Uptime (seconds): " + wholeSeconds + "." + remainderTicks);
     }

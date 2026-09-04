@@ -1,5 +1,6 @@
 // Copyright (c) MOSA Project. Licensed under the New BSD License.
-// Copyright (c) Mandrillus OS. Licensed under the MIT License.
+// Copyright (c) 2026 Leandro Vieira / Mandrillus Systems
+// Licensed under the MIT License. See LICENSE file in the project root.
 using System;
 using Mandrillus.Kernel.Hardware;
 using Mandrillus.Kernel.Shell;
@@ -26,6 +27,8 @@ public static class Program
 		Console.Clear();
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("MOSA x86 Kernel");
+		Console.WriteLine("Copyright (c) MOSA Project.");
+		Console.WriteLine("Licensed under the New BSD License.");
         Console.ForegroundColor = ConsoleColor.Blue;
         Console.WriteLine($"Mandrillus OS Kernel v{MandrillusVersion.GetDisplayVersion()}");
 		Console.WriteLine($"Copyright (c) {MandrillusVersion.CopyrightYear} Mandrillus Systems.");
