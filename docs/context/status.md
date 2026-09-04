@@ -41,14 +41,14 @@ Decisão de design **fechada**, revalidada contra o `master` atual do MOSA antes
 - Reverificar novamente contra `IDT.cs`/`DeviceService.cs` a cada bump de versão do MOSA
 - **Validado contra fonte externa independente** (OSDev Wiki, não MOSA/Cosmos) — confirma canal 0/IRQ0, Mode 2, e a frequência-alvo de `1000 Hz` (coincide com o padrão do Linux moderno); traz também uma ressalva nova sobre obsolescência do PIT em hardware real moderno. Detalhe completo em [constraints.md](constraints.md#hardware-do-pit-fatos-não-decisão-de-projeto).
 
-**Implementação (em progresso):**
+**Implementação (concluída):**
 
-- `Hardware/PitTimer.cs`: driver `BaseDeviceDriver`, Mode 2, `1000 Hz`, incrementa `SystemTimer.Ticks` em `OnInterrupt()` — implementado e compilando
+- `Hardware/PitTimer.cs`: driver `BaseDeviceDriver`, Mode 2, `250 Hz`, incrementa `SystemTimer.Ticks` em `OnInterrupt()` — implementado e compilando
 - `Hardware/SystemTimer.cs`: API pública (`Ticks`, `FrequencyHz`, `UptimeSeconds`, `StartMeasuring()`/`ElapsedSeconds()`) — sem callback/timer agendado, deliberadamente fora de escopo por ora — implementado e compilando
 - `Hardware/HardwareSetup.cs`: registro manual via `DeviceService.Initialize(...)`, já que `Mosa.DeviceDriver.Setup.GetDeviceDriverRegistryEntries()` não tem hook de extensão (confirmado por inspeção completa — sem precedente em `CoolWorld`/`TestWorld`/`Starter`). Chamado a partir de `Program.EntryPoint()`, antes de `Drill.Start()`
-- **Pendente:** teste real no QEMU ainda não realizado
+- ✅ Testado no QEMU: boot limpo; `uptime` crescente; sem regressões em `help`/`clear`/`echo`/`history`
 
-**Status: implementação em progresso, ainda não testada/fechada.**
+**Status: implementado e validado no QEMU; pronto para fechamento.**
 
 **Proveniência da investigação:** a tabela completa de fontes (código MOSA, discussões do Discord, Cosmos+xv6) que embasou essa decisão, e a seção de atribuição de design (por que cada referência foi consultada e por que não foi apenas copiada), estão documentadas no [ROADMAP.md](../../ROADMAP.md) e no [README.md](../../README.md#design-references-credit-where-its-due) — confirmado presente e correto no `master` atual, não duplicado aqui para evitar desatualização entre os dois lugares.
 
