@@ -87,9 +87,9 @@ public class PitTimer : BaseDeviceDriver
     public override bool OnInterrupt()
     {
         // Deliberately minimal: no memory allocation here, consistent with the
-        // same caution already documented for Schedule-adjacent interrupt code
+        // same caution already documented for Scheduler-adjacent interrupt code
         // (see the Issue #9 IRQ handler investigation notes) - this runs on every
-        // IRQ0 tick, right alongside Schedule.ClockInterrupt.
+        // IRQ0 tick, right alongside Scheduler.ClockInterrupt.
         SystemTimer.Ticks++;
 
         return true;
