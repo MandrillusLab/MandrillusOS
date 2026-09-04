@@ -1,4 +1,4 @@
-﻿// Copyright © 2026 Leandro Vieira / Mandrillus Systems
+﻿// Copyright (c) 2026 Leandro Vieira / Mandrillus Systems
 // Licensed under the MIT License. See LICENSE file in the project root.
 using System;
 using System.Collections.Generic;
@@ -399,5 +399,6 @@ public static class Drill
         RegisterCommand("clear", "Clears the screen.", ClearCommand.Execute);
         RegisterCommand("echo", "Prints back the given arguments.", EchoCommand.Execute);
         RegisterCommand("history", "Lists previous entered commands.", HistoryCommand.Execute);
+        RegisterCommand("uptime", "Displays the system uptime.", UptimeCommand.Execute);
     }
 }

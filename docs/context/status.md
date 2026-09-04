@@ -39,10 +39,20 @@ Decisão de design **fechada**, revalidada contra o `master` atual do MOSA antes
 - Reverificado contra `Source/Mosa.Kernel.BareMetal.x86/IDT.cs` e `Source/Mosa.DeviceSystem/Services/DeviceService.cs` — nenhuma mudança relevante desde a investigação original; decisão continua tecnicamente válida
 - `ISADeviceDriverRegistryEntry.AutoLoad` não precisa ser configurado — confirmado que essa propriedade não é lida em nenhum lugar do fluxo de start automático atual (ver constraints.md)
 - Reverificar novamente contra `IDT.cs`/`DeviceService.cs` a cada bump de versão do MOSA
+- **Validado contra fonte externa independente** (OSDev Wiki, não MOSA/Cosmos) — confirma canal 0/IRQ0 e Mode 2; a fonte cita `1000 Hz` como frequência clássica (Linux moderno), mas o Mandrillus adotou `250 Hz` pela curva empírica de captura de ticks. Detalhe completo em [constraints.md](constraints.md#hardware-do-pit-fatos-não-decisão-de-projeto).
 
-**Status: design revalidado, implementação ainda não iniciada.**
+**Implementação (concluída):**
+
+- `Hardware/PitTimer.cs`: driver `BaseDeviceDriver`, Mode 2, `250 Hz`, incrementa `SystemTimer.Ticks` em `OnInterrupt()` — implementado e compilando
+- `Hardware/SystemTimer.cs`: API pública (`Ticks`, `FrequencyHz`, `UptimeSeconds`, `StartMeasuring()`/`ElapsedSeconds()`) — sem callback/timer agendado, deliberadamente fora de escopo por ora — implementado e compilando
+- `Hardware/HardwareSetup.cs`: registro manual via `DeviceService.Initialize(...)`, já que `Mosa.DeviceDriver.Setup.GetDeviceDriverRegistryEntries()` não tem hook de extensão (confirmado por inspeção completa — sem precedente em `CoolWorld`/`TestWorld`/`Starter`). Chamado a partir de `Program.EntryPoint()`, antes de `Drill.Start()`
+- ✅ Testado no QEMU: boot limpo; `uptime` crescente; sem regressões em `help`/`clear`/`echo`/`history`
+
+**Status: implementado e validado no QEMU; pronto para fechamento.**
 
 **Proveniência da investigação:** a tabela completa de fontes (código MOSA, discussões do Discord, Cosmos+xv6) que embasou essa decisão, e a seção de atribuição de design (por que cada referência foi consultada e por que não foi apenas copiada), estão documentadas no [ROADMAP.md](../../ROADMAP.md) e no [README.md](../../README.md#design-references-credit-where-its-due) — confirmado presente e correto no `master` atual, não duplicado aqui para evitar desatualização entre os dois lugares.
+
+**⚠️ Pendência de documentação:** o [OSDev Wiki — Programmable Interval Timer](https://wiki.osdev.org/Programmable_Interval_Timer) ainda **não foi adicionado** à tabela de fontes do README/ROADMAP — precisa ser incluído manualmente lá, seguindo o mesmo padrão de atribuição já usado para `Cosmos.HAL/PIT.cs` e as discussões do Discord (Claude não tinha o conteúdo desses dois arquivos nesta conversa para editar diretamente).
 
 ## Filesystem (issue futura, pós #8 e #9)
 

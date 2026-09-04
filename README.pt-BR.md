@@ -41,7 +41,7 @@ Construir o Mandrillus envolve ler regularmente o código-fonte, a documentaçã
 
 ## Status atual
 
-🚧 **Fase inicial** — kernel gerado a partir do template `mosakrnl`, com boot validado em **dois hypervisors diferentes**: QEMU e Hyper-V (Generation 1). O kernel MOSA BareMetal por baixo já cuida de gerenciamento de memória, interrupções e detecção de dispositivos no boot (veja abaixo); a funcionalidade específica do Mandrillus — começando por um shell interativo — é o foco atual de desenvolvimento. Veja o [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md) para o acompanhamento completo por fase.
+🚧 **Fase 1 concluída** — kernel gerado a partir do template `mosakrnl`, com boot validado em **dois hypervisors diferentes**: QEMU e Hyper-V (Generation 1). O kernel MOSA BareMetal por baixo cuida de gerenciamento de memória, interrupções e detecção de dispositivos no boot (veja abaixo); o shell interativo autoral do Mandrillus, o **Drill**, está implementado e fechado (Issue #8). O desenvolvimento agora está focado na Fase 2 — começando pelo timer PIT (Issue #9), pré-requisito para escalonamento preemptivo de verdade. Veja o [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md) para o acompanhamento completo por fase.
 
 Validar o boot em mais de um hypervisor não é redundância — é evidência de robustez. QEMU (sem KVM) é majoritariamente um emulador por software, mais tolerante a peculiaridades de bootloader. O Hyper-V é um hypervisor nativo (tipo 1), com acesso direto às extensões de virtualização da CPU, e historicamente mais rígido sobre o que aceita bootar. O Mandrillus OS já roda em ambos, lado a lado com sistemas operacionais de produção no mesmo host Hyper-V.
 
@@ -116,7 +116,7 @@ Cada uma dessas aplicações será tratada como um projeto separado dentro do re
 
 Os pacotes NuGet do MOSA (`Mosa.Platform`, `Mosa.Platform.x86`, `Mosa.DeviceSystem`, `Mosa.Tools.Package`) estão **travados na versão `2.6.1.1669`** neste projeto, em vez de usar `Version="*"`. Isso não é acidental: builds mais recentes (`2.6.1.1694` em diante, incluindo a última publicada até o momento, `2.6.1.1724`) têm uma regressão de empacotamento que quebra a resolução do assembly `Mosa.Compiler.Platforms`, impedindo tanto o `Mosa.Tool.Launcher` (GUI) quanto o `Mosa.Tool.Launcher.Console` de funcionar (`System.IO.FileNotFoundException`).
 
-Esse problema foi isolado via bisecção manual entre as builds publicadas no NuGet e reportado à comunidade do MOSA Project. Caso o pacote seja corrigido em uma versão futura, esta nota deve ser revisada e o pin removido.
+Esse problema foi isolado via bisecção manual entre as builds publicadas no NuGet e reportado upstream como [Issue #1295 do MOSA-Project](https://github.com/mosa/MOSA-Project/issues/1295). Caso o pacote seja corrigido em uma versão futura, esta nota deve ser revisada e o pin removido.
 
 ### Setup
 

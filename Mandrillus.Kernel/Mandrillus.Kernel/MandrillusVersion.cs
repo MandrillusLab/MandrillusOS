@@ -28,7 +28,7 @@ public static class MandrillusVersion
     /// <summary>
     /// SemVer MAJOR.MINOR.PATCH. Update by hand - see class remarks.
     /// </summary>
-    public const string Version = "0.1.0";
+    public const string Version = "0.2.0";
 
     /// <summary>
     /// Optional per-release codename, for portfolio/changelog narration.

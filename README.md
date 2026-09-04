@@ -41,7 +41,7 @@ Building Mandrillus involves regularly reading MOSA's (and, where relevant, Cosm
 
 ## Current status
 
-🚧 **Early stage** — kernel generated from the `mosakrnl` template, boot validated on **two different hypervisors**: QEMU and Hyper-V (Generation 1). The MOSA BareMetal kernel underneath is already handling memory management, interrupts, and device detection at boot (see below); Mandrillus-specific functionality — starting with an interactive shell — is the current focus of development. See [ROADMAP.md](ROADMAP.md) for full phase-by-phase tracking.
+🚧 **Phase 1 complete** — kernel generated from the `mosakrnl` template, boot validated on **two different hypervisors**: QEMU and Hyper-V (Generation 1). The MOSA BareMetal kernel underneath handles memory management, interrupts, and device detection at boot (see below); Mandrillus's own interactive shell, **Drill**, is implemented and closed (Issue #8). Development is now focused on Phase 2 — starting with the PIT timer (Issue #9), a prerequisite for real preemptive scheduling. See [ROADMAP.md](ROADMAP.md) for full phase-by-phase tracking.
 
 Validating boot across more than one hypervisor isn't redundancy — it's evidence of robustness. QEMU (without KVM) is largely a software emulator, more tolerant of bootloader quirks. Hyper-V is a native (type 1) hypervisor, with direct access to CPU virtualization extensions, and historically stricter about what it accepts to boot. Mandrillus OS already runs on both, alongside production operating systems on the same Hyper-V host.
 
@@ -116,7 +116,7 @@ Each of these applications will be treated as a separate project within the Mand
 
 The MOSA NuGet packages (`Mosa.Platform`, `Mosa.Platform.x86`, `Mosa.DeviceSystem`, `Mosa.Tools.Package`) are **pinned to version `2.6.1.1669`** in this project, instead of using `Version="*"`. This isn't accidental: more recent builds (`2.6.1.1694` onward, including the latest published at the time of writing, `2.6.1.1724`) have a packaging regression that breaks resolution of the `Mosa.Compiler.Platforms` assembly, preventing both `Mosa.Tool.Launcher` (GUI) and `Mosa.Tool.Launcher.Console` from working (`System.IO.FileNotFoundException`).
 
-This issue was isolated through manual bisection across the builds published on NuGet and reported to the MOSA Project community. If the package is fixed in a future version, this note should be revisited and the pin removed.
+This issue was isolated through manual bisection across the builds published on NuGet and reported upstream as [MOSA-Project Issue #1295](https://github.com/mosa/MOSA-Project/issues/1295). If the package is fixed in a future version, this note should be revisited and the pin removed.
 
 ### Setup
 

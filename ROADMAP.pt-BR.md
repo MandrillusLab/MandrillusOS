@@ -20,7 +20,7 @@ Legenda de status: ✅ Concluído · 🚧 Em andamento · ⏳ Planejado · 💭 
 
 ## Fase 1 — Núcleo do Kernel (x86, 32 bits)
 
-Rastreado como Issues no GitHub, sob o milestone **"Phase 1 — Kernel Core"**.
+**Status: concluída.** Rastreado como Issues no GitHub, sob o milestone **"Phase 1 — Kernel Core"**.
 
 > **Nota:** uma investigação confirmou (via [documentação do MOSA](https://www.mosa-project.org/a-dive-into-baremetal.html), o log de boot real e inspeção direta de `Source/Mosa.DeviceDriver/ISA/` no repositório do MOSA) que a maior parte — mas não toda — da infraestrutura de baixo nível da Fase 1 já é fornecida pelo kernel MOSA BareMetal sobre o qual o `Mandrillus.Kernel.x86` é construído. Os itens abaixo marcados como *(herdado)* não são trabalho autoral.
 
@@ -30,11 +30,11 @@ Rastreado como Issues no GitHub, sob o milestone **"Phase 1 — Kernel Core"**.
 - ✅ Memória virtual / paginação *(herdado do MOSA BareMetal)* — #4
 - ✅ Driver de teclado *(herdado do MOSA BareMetal — `StandardKeyboard`)* — #6
 - ✅ Driver de vídeo em modo texto *(herdado do MOSA BareMetal — API `Console`)* — #7
-- ⏳ Shell interativo mínimo (trabalho autoral — integra teclado + saída de console em um loop de comandos) — #8
+- ✅ Shell interativo mínimo (trabalho autoral — integra teclado + saída de console em um loop de comandos; lançado como **Drill**) — #8
 
 > **Nota:** o item de timer PIT (originalmente #5 aqui) foi movido para a Fase 2 — veja abaixo. A investigação confirmou que o shell não tem nenhuma dependência de trabalho de timer; o timer é, na verdade, um pré-requisito de escalonamento preemptivo. Raciocínio completo na nota sob a Fase 2.
 >
-> **Atenção para a Issue #8:** discussões públicas no [Discord do MOSA](https://discord.gg/tRNMn3npsv) (canal `#general`) descrevem o scheduler do BareMetal como cooperativo, não preemptivo — foi relatado que uma chamada bloqueante de leitura de teclado travou o sistema inteiro porque nada forçava uma troca de contexto enquanto ela bloqueava. O loop principal do shell deveria seguir o mesmo padrão ao qual a comunidade chegou: verificar se há uma tecla sem bloquear indefinidamente, em vez de chamar uma leitura bloqueante diretamente. Veja a nota da Fase 2 abaixo para o contexto relacionado de timer/scheduler.
+> **Retrospectiva da Issue #8:** discussões públicas no [Discord do MOSA](https://discord.gg/tRNMn3npsv) (canal `#general`) descreveram o scheduler do BareMetal como cooperativo, não preemptivo — foi relatado que uma chamada bloqueante de leitura de teclado travou o sistema inteiro porque nada forçava uma troca de contexto enquanto ela bloqueava. O loop principal do Drill segue o padrão ao qual a comunidade chegou: verificar se há uma tecla sem bloquear indefinidamente (`Kernel.Keyboard.GetKeyPressed()`, não-bloqueante), em vez de chamar uma leitura bloqueante diretamente. Um bug separado foi encontrado e corrigido depois do fechamento: o comando `echo` com argumentos travava o sistema por causa de uma falha silenciosa do `Array.Copy` no `Mosa.Korlib` — ver [docs/context/constraints.md](docs/context/constraints.md#korlib) para o detalhamento completo da causa raiz. Veja a nota da Fase 2 abaixo para o contexto relacionado de timer/scheduler.
 
 ## Fase 2 — Serviços de Sistema
 
@@ -48,7 +48,7 @@ Rastreado como Issues no GitHub, sob o milestone **"Phase 1 — Kernel Core"**.
 
 - 💭 Gerenciamento de processos/tarefas
 - 💭 Escalonador básico (cooperativo → preemptivo)
-- ⏳ Timer PIT: programar uma frequência conhecida e assumir controle do tick de clock do scheduler (IRQ0/vetor 0x20 compartilhado) — #9
+- ✅ Timer PIT: programar uma frequência conhecida e assumir controle do tick de clock do scheduler (IRQ0/vetor 0x20 compartilhado) — #9 (250Hz; exposto via SystemTimer + comando `uptime` do Drill)
 - 💭 Comunicação entre processos (IPC)
 - 💭 Suporte a sistema de arquivos (começar somente leitura, FS simples)
 - 💭 Camada de abstração de dispositivos
