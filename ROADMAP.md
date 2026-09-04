@@ -48,7 +48,7 @@ Status legend: ✅ Done · 🚧 In Progress · ⏳ Planned · 💭 Concept
 
 - 💭 Process/task management
 - 💭 Basic scheduler (cooperative → preemptive)
-- ⏳ PIT timer: program a known frequency and take control of the scheduler's clock tick (shared IRQ0/vector 0x20) — #9 *(design closed, implementation not started — current focus)*
+- ✅ PIT timer: program a known frequency and take control of the scheduler's clock tick (shared IRQ0/vector 0x20) — #9 (250Hz; exposed via SystemTimer + Drill `uptime` command)
 - 💭 Inter-process communication
 - 💭 Filesystem support (start read-only, simple FS)
 - 💭 Device abstraction layer
