@@ -41,7 +41,7 @@ Building Mandrillus involves regularly reading MOSA's (and, where relevant, Cosm
 
 ## Current status
 
-🚧 **Phase 1 complete** — kernel generated from the `mosakrnl` template, boot validated on **two different hypervisors**: QEMU and Hyper-V (Generation 1). The MOSA BareMetal kernel underneath handles memory management, interrupts, and device detection at boot (see below); Mandrillus's own interactive shell, **Drill**, is implemented and closed (Issue #8). Development is now focused on Phase 2 — starting with the PIT timer (Issue #9), a prerequisite for real preemptive scheduling. See [ROADMAP.md](ROADMAP.md) for full phase-by-phase tracking.
+🚧 **Phase 1 complete** — kernel generated from the `mosakrnl` template, boot validated on **two different hypervisors**: QEMU and Hyper-V (Generation 1). The MOSA BareMetal kernel underneath handles memory management, interrupts, and device detection at boot (see below); Mandrillus's own interactive shell, **Drill**, is implemented and closed (Issue #8). **Phase 2 is underway** — the PIT timer (Issue #9) is closed, calibrated to 250Hz and exposed via `SystemTimer` and the shell's `uptime` command. See [ROADMAP.md](ROADMAP.md) for full phase-by-phase tracking.
 
 Validating boot across more than one hypervisor isn't redundancy — it's evidence of robustness. QEMU (without KVM) is largely a software emulator, more tolerant of bootloader quirks. Hyper-V is a native (type 1) hypervisor, with direct access to CPU virtualization extensions, and historically stricter about what it accepts to boot. Mandrillus OS already runs on both, alongside production operating systems on the same Hyper-V host.
 

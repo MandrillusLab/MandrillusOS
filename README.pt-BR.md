@@ -29,7 +29,7 @@ Este não é um projeto de "CRUD com banco de dados". Ele existe para evidenciar
 ## Referências e inspiração
 
 | Projeto | O que o Mandrillus aproveita dele |
-|---|---|
+| --- | --- |
 | [MOSA Project](https://github.com/mosa/MOSA-Project) | Toolchain de compilação AOT (IL → código nativo), templates de kernel, base do projeto atual |
 | [Cosmos OS](https://github.com/CosmosOS/Cosmos) | Referência conceitual de arquitetura — prova de que um SO gerenciado em C# é viável em produção educacional |
 
@@ -41,7 +41,7 @@ Construir o Mandrillus envolve ler regularmente o código-fonte, a documentaçã
 
 ## Status atual
 
-🚧 **Fase 1 concluída** — kernel gerado a partir do template `mosakrnl`, com boot validado em **dois hypervisors diferentes**: QEMU e Hyper-V (Generation 1). O kernel MOSA BareMetal por baixo cuida de gerenciamento de memória, interrupções e detecção de dispositivos no boot (veja abaixo); o shell interativo autoral do Mandrillus, o **Drill**, está implementado e fechado (Issue #8). O desenvolvimento agora está focado na Fase 2 — começando pelo timer PIT (Issue #9), pré-requisito para escalonamento preemptivo de verdade. Veja o [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md) para o acompanhamento completo por fase.
+🚧 **Fase 1 concluída** — kernel gerado a partir do template `mosakrnl`, com boot validado em **dois hypervisors diferentes**: QEMU e Hyper-V (Generation 1). O kernel MOSA BareMetal por baixo cuida de gerenciamento de memória, interrupções e detecção de dispositivos no boot (veja abaixo); o shell interativo autoral do Mandrillus, o **Drill**, está implementado e fechado (Issue #8). **A Fase 2 já está em andamento** — o timer PIT (Issue #9) está fechado, calibrado em 250Hz e exposto via `SystemTimer` e o comando `uptime` do shell. Veja o [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md) para o acompanhamento completo por fase.
 
 Validar o boot em mais de um hypervisor não é redundância — é evidência de robustez. QEMU (sem KVM) é majoritariamente um emulador por software, mais tolerante a peculiaridades de bootloader. O Hyper-V é um hypervisor nativo (tipo 1), com acesso direto às extensões de virtualização da CPU, e historicamente mais rígido sobre o que aceita bootar. O Mandrillus OS já roda em ambos, lado a lado com sistemas operacionais de produção no mesmo host Hyper-V.
 
@@ -52,7 +52,7 @@ O Mandrillus OS é construído sobre o **kernel BareMetal** do MOSA, não implem
 Isso foi confirmado cruzando a [documentação do MOSA](https://www.mosa-project.org/a-dive-into-baremetal.html) com a árvore de dependências real do `Mandrillus.Kernel.x86` (que referencia `Mosa.Kernel.BareMetal.x86.dll` e `Mosa.Kernel.BareMetal.dll`) e o próprio log de boot do kernel:
 
 | Componente | Status |
-|---|---|
+| --- | --- |
 | GDT (Global Descriptor Table) | Fornecido pelo MOSA BareMetal |
 | IDT (Interrupt Descriptor Table) | Fornecido pelo MOSA BareMetal |
 | Gerenciamento de memória física e virtual | Fornecido pelo MOSA BareMetal |
@@ -75,7 +75,7 @@ Algumas decisões de design do Mandrillus são informadas pela leitura do códig
 
 ## Estrutura do projeto
 
-```
+```code
 Mandrillus/                              # Solution
 ├── Mandrillus.Kernel/                   # Projeto de kernel agnóstico de plataforma
 │   ├── Mandrillus.Kernel.csproj
@@ -120,7 +120,7 @@ Esse problema foi isolado via bisecção manual entre as builds publicadas no Nu
 
 ### Setup
 
-```bash
+```powershell
 dotnet new install Mosa.Templates
 dotnet new mosakrnl -o Mandrillus
 cd Mandrillus
@@ -149,9 +149,11 @@ O Mandrillus OS também foi validado rodando em Hyper-V, ao lado de outros siste
 1. No Launcher, mude **Image Format** de `IMG (.img)` para `Microsoft (.vhd)` antes de compilar.
    > ⚠️ Na versão atual do MOSA (`2.6.1.1669`), essa opção não gera de fato um `.vhd` — o pipeline continua produzindo apenas `.bin`/`.img`, independente da seleção na UI. É necessário converter manualmente (próximo passo).
 2. Converta a imagem `.img` gerada para `.vhd` usando `qemu-img` (já disponível junto do QEMU):
+
    ```powershell
    qemu-img convert -f raw -O vpc Mandrillus.Kernel.x86.img Mandrillus.Kernel.x86.vhd
    ```
+
    Alternativamente, ferramentas como o [StarWind V2V Converter](https://www.starwindsoftware.com/starwind-v2v-converter) também fazem essa conversão.
 3. No **Hyper-V Manager**, crie uma nova VM como **Generation 1**, com Secure Boot desabilitado, e anexe o `.vhd` gerado como disco de boot.
 4. Inicie a VM — o kernel deve bootar e exibir a saída de debug/console, da mesma forma que no QEMU.

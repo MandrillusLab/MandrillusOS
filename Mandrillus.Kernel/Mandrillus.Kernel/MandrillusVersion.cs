@@ -34,7 +34,7 @@ public static class MandrillusVersion
     /// Optional per-release codename, for portfolio/changelog narration.
     /// Leave empty string if not using one for a given release.
     /// </summary>
-    public const string Codename = "Drill";
+    public const string Codename = "PIT";
 
     /// <summary>
     /// Optional build metadata (e.g. short commit hash), appended after
