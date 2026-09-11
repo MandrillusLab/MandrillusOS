@@ -44,6 +44,8 @@ qemu-img convert -f raw -O vpc
 
 Referência completa de flags do `Mosa.Tool.Launcher.Console`: ver `MOSA-Launcher-CLI-Reference.md` no repositório.
 
+**Teclado no Hyper-V (Generation 1) — RESOLVIDO:** o teclado PS/2 nunca respondia no Hyper-V (funcionava normalmente no QEMU). Causa raiz: o controlador 8042 virtual do Hyper-V inicia num estado "preso" de buffer de saída após um ciclo completo de energia (Turn Off + Start — um simples "Reset" não reproduz nem corrige isso), que impede IRQ1 de disparar mesmo com o bit de habilitação já corretamente setado pelo `StandardMouse.Initialize()` do MOSA. Fix: `HardwareSetup.KickHyperVPS2Controller()` lê o Controller Configuration Byte uma vez durante o boot (o valor lido é irrelevante — o ato de ler "destrava" o controlador). Confirmado reproduzível em 3 ciclos completos de energia seguidos. Ao testar teclado em Hyper-V, sempre usar Turn Off + Start, nunca só Reset.
+
 ## Convenção de copyright
 
 - Cabeçalho só em arquivos-âncora (`Program.cs`, `Boot.cs`-nível de entry point) — não em todo arquivo

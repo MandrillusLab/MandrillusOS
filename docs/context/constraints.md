@@ -17,7 +17,7 @@ O scheduler do BareMetal é **cooperativo, não preemptivo**. Chamadas bloqueant
 Gaps confirmados:
 
 | API ausente/quebrada | Workaround |
-|---|---|
+| --- | --- |
 | `Dictionary<TKey,TValue>` | Duas `List<T>` paralelas (Korlib tem `List<T>`, `Queue<T>`, `Stack<T>`, `LinkedList<T>`, interface `IDictionary` sem implementação) |
 | `string.Join` | Loop manual com `string.Concat`/`+=` (Korlib tem `Concat` e `Format`, não `Join`) |
 | `Array.Copy(Array, int, Array, int, int)` | Loop manual copiando elemento a elemento — ver nota abaixo |
@@ -161,7 +161,7 @@ Mandrillus não tem (e não terá) suíte de testes própria — usa o tooling d
 
 Decisão de design para Issue #9 (não é restrição, é escolha já fechada): ver [status.md](status.md#issue-9-pit).
 
-**Status final:** Issue #9 fechada. PR revisado (incluindo review automático do Copilot, que identificou o bug de formatação do `uptime` e a questão de atomicidade de `Ticks` — ver [Gap #5](#gap-5-volatile-indisponível-systemruntimecompilerservicesisvolatile-ausente) acima para a resolução), corrigido, testado no QEMU e mesclado em `master`.
+**Status final:** Issue #9 fechada. PR revisado (incluindo review automático do Copilot, que identificou o bug de formatação do `uptime` e a questão de atomicidade de `Ticks` — ver [Gap #5] (#gap-5-volatile-indisponível-systemruntimecompilerservicesisvolatile-ausente) acima para a resolução), corrigido, testado no QEMU e mesclado em `master`.
 
 ## ⚠️ Bug do compilador MOSA: `ulong`/`long` → `double` em x86
 
@@ -182,14 +182,78 @@ Decisão de design para Issue #9 (não é restrição, é escolha já fechada): 
 
 **Potencial de contribuição upstream — o mais forte dos três achados até agora:** já existe reprodução real (erro de build do Mandrillus), causa raiz com arquivo/linha exatos nos dois casos (ausência total e truncamento silencioso), **e** evidência histórica direta de que a equipe já conhece a técnica de solução (decomposição de bits IEEE 754, só que na direção inversa — reconstruir os bits de um `double` a partir de um inteiro, em vez de extrair um inteiro dos bits de um `double`).
 
+## ⚠️ Bug do compilador MOSA: eliminação incorreta de branch de saída em loop com condição `&&` composta
+
+**Categoria: miscompile silencioso, mais grave que os anteriores** — não é erro de compilação (`IsVolatile`) nem falha em runtime isolada num tipo específico (`ConvertU64ToR8`). Aqui, código C# semanticamente correto e sem ambiguidade gera binário com **comportamento diferente do esperado, sem nenhum erro ou aviso**. Descoberto durante o fix do teclado do Hyper-V (`HardwareSetup.KickHyperVPS2Controller()`).
+
+**Sintoma:** duas formas de C# logicamente idênticas produzem comportamento real diferente no QEMU:
+
+Forma A (colapsada — **NUNCA usar este padrão**):
+
+```csharp
+var timeout = 100000;
+while (timeout > 0 && (command.Read8() & 0x01) != 0x01)
+    timeout--;
+
+if (timeout > 0)
+    data.Read8();
+```
+
+Forma B (guard de retorno antecipado, separado — **usar sempre**):
+
+```csharp
+var timeout = 100000;
+while (timeout > 0 && (command.Read8() & 0x01) != 0x01)
+    timeout--;
+
+if (timeout == 0)
+    return;
+
+data.Read8();
+```
+
+Com a Forma A, no QEMU (onde esse loop específico sempre estoura o timeout de verdade), o boot trava indefinidamente até uma tecla real ser pressionada. Com a Forma B, idêntico em C#, o boot segue normalmente em 3 execuções seguidas sem travar.
+
+**Causa raiz, confirmada por bisecção real de flags do compilador** (não só hipótese — comparação direta do `.asm` gerado via `Mosa.Tool.Launcher.Console.exe ... -output-asm -autolaunch-off`, que usa o disassembler próprio do MOSA/Reko):
+
+Na Forma A compilada, o teste `timeout > 0` desaparece **inteiramente** do loop (só sobra o teste do `command.Read8()`), e o `if (timeout > 0)` pós-loop também desaparece — `data.Read8()` passa a rodar incondicionalmente. Ou seja: o compilador prova (incorretamente) que o branch `timeout > 0` é sempre verdadeiro depois do loop, e elimina os dois testes.
+
+Bisecção por flag individual isolou a causa:
+
+| Flag | Branch correto? |
+| --- | --- |
+| padrão (tudo ligado) | ❌ não |
+| `-sccp-off`, `-value-numbering-off`, `-bittracker-off`, `-platform-optimizations-off`, `-inline-off`, `-loop-invariant-code-motion-off` | ❌ não |
+| `-looprange-off` | ✅ sim |
+| `-ssa-off` | ✅ sim |
+| `-basic-optimizations-off` | ✅ sim |
+
+Aponta para o encadeamento em `Source/Mosa.Compiler.Framework/Compiler.cs:185-188`:
+
+```csharp
+mosaSettings.LoopRangeTracker && mosaSettings.SSA ? new LoopRangeTrackerStage() : null,
+mosaSettings.BasicOptimizations ? new OptimizationStage(mosaSettings.LongExpansion) : null,
+```
+
+`-looprange-off` desativa `LoopRangeTrackerStage` direto; `-ssa-off` o desativa como efeito colateral (`LoopRangeTrackerStage.cs:35`: `if (!MethodCompiler.IsInSSAForm) return;`); `-basic-optimizations-off` deixa o range ser calculado mas desativa o `OptimizationStage` que o consome pra dobrar/eliminar o branch.
+
+**O bug em si**, em `LoopRangeTrackerStage.cs:291-371` (`DetermineMinOut`/`DetermineMaxOut`): o stage deriva o range da variável de indução (`timeout`) olhando só pro branch que compara essa variável (`timeout > 0`) nos predecessores do loop. Ele não enxerga que o `while` tem uma condição composta (`&&`) com uma **segunda saída do loop**, totalmente independente, baseada em outra variável (`command.Read8()`). O range inferido assume implicitamente que a única saída é via aquele branch — premissa falsa aqui — e um transform subsequente do `OptimizationStage` usa esse range pra provar o `if (timeout > 0)` como sempre-verdadeiro e eliminá-lo.
+
+**Não confirmado:** o arquivo/transform exato dentro de `Transforms/Optimizations/Auto|Manual/...` que faz a dobra final do branch (candidatos inspecionados — `Branch32GreaterThanZero.cs`, `IfThenElse32AlwaysTrue.cs` — nenhum bateu exatamente). A cadeia de causalidade (stage → range incorreto → otimização subsequente consome → branch removido) está confirmada por bisecção real; o elo final fica como lacuna de investigação, não fato.
+
+**Regra prática daqui pra frente:** nunca colapsar um `if` pós-loop numa condição que dependa da mesma variável de controle de um `while` com `&&` de saída dupla (uma condição limitada por contagem + uma condição de hardware/efeito colateral). Sempre usar um guard de retorno antecipado separado (Forma B), mesmo quando pareça redundante — o comportamento observado mostra que não é.
+
+**Reportado upstream:** [MOSA-Project Issue #1298](https://github.com/mosa/MOSA-Project/issues/1298).
+
 ## Achados com potencial de contribuição upstream (registro consolidado)
 
-Cinco achados técnicos desta investigação têm reprodução concreta o suficiente para virar Issue/PR no `mosa/MOSA-Project`, caso Leandro decida contribuir de volta:
+Seis achados técnicos desta investigação têm reprodução concreta o suficiente para virar Issue/PR no `mosa/MOSA-Project`, caso Leandro decida contribuir de volta:
 
 1. **`ArrayPlug.cs` — `Array.Copy` trava silenciosamente** (ver detalhes na seção [Korlib](#korlib) acima). Arquivo/linha exatos, reconhecimento do próprio time via `TODO`/`Broken`, reprodução em bare-metal via QEMU.
 2. **Regressão de empacotamento do `Mosa.Tools.Package`** (ver [Versionamento de dependências](tooling.md#versionamento) no tooling.md). Stack trace exato, causa raiz identificada (`Mosa.Compiler.Platforms` referenciado via `ProjectReference` não é copiado corretamente para o pacote NuGet publicado), confirmado persistente por vários meses e múltiplas versões (`1694` até pelo menos `1724`).
 3. **`ConvertU64ToR8`/`ConvertI64ToR8` ausente/truncado em x86** (ver seção acima). O mais forte dos cinco — vem com causa raiz precisa **e** evidência histórica de que a equipe já sabe como resolver (mesma técnica usada com sucesso na direção oposta, `R8ToI8`).
-4. **Formatação `double`/`float` → `string` ausente em `Mosa.Korlib`** (ver [Gap #4](#gap-4---formatação-doublefloat--string-inexistente) acima). Causa raiz confirmada (nenhum `ToString()` próprio em `Double`/`Single`), mas escopo de implementação genuinamente complexo (arredondamento correto de ponto flutuante).
-5. **`System.Runtime.CompilerServices.IsVolatile` ausente, tornando `volatile` inutilizável** (ver [Gap #5](#gap-5-volatile-indisponível-systemruntimecompilerservicesisvolatile-ausente) acima). Escopo maior que os demais — envolveria suporte a `modreq` no toolchain, não só uma lacuna de API isolada.
+4. **Formatação `double`/`float` → `string` ausente em `Mosa.Korlib`** (ver [Gap #4] (#gap-4---formatação-doublefloat--string-inexistente) acima). Causa raiz confirmada (nenhum `ToString()` próprio em `Double`/`Single`), mas escopo de implementação genuinamente complexo (arredondamento correto de ponto flutuante).
+5. **`System.Runtime.CompilerServices.IsVolatile` ausente, tornando `volatile` inutilizável** (ver [Gap #5] (#gap-5-volatile-indisponível-systemruntimecompilerservicesisvolatile-ausente) acima). Escopo maior que os demais — envolveria suporte a `modreq` no toolchain, não só uma lacuna de API isolada.
+6. **`LoopRangeTrackerStage` elimina incorretamente um branch de saída de loop quando a condição `&&` tem uma segunda saída independente** (ver seção acima). O mais grave dos seis — é o único miscompile silencioso (código correto vira binário com semântica errada, sem nenhum erro), com bisecção real de flags confirmando o mecanismo, mas sem o transform exato de dobra do branch identificado ainda. [Issue #1298](https://github.com/mosa/MOSA-Project/issues/1298).
 
 Todos os cinco são candidatos mais fortes que um simples "não funciona" — já chegam com causa raiz identificada e reprodução documentada.
