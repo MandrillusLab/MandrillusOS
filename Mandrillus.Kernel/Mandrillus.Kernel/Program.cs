@@ -35,7 +35,8 @@ public static class Program
 		Console.WriteLine("Licensed under the MIT License.");
         Console.ResetColor();
 
-		HardwareSetup.RegisterPitTimer();
+        HardwareSetup.RegisterPitTimer();
+        HardwareSetup.KickHyperVPS2Controller();
 
         Drill.Start();
 

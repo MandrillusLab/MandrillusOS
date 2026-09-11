@@ -75,6 +75,7 @@ public static class Drill
         Console.WriteLine("Mandrillus OS - Drill shell");
         Console.WriteLine("Type 'help' for a list of commands.");
         Console.WriteLine();
+
         WritePrompt();
 
         while (_running)
