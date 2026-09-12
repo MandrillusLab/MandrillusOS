@@ -12,7 +12,7 @@ Esquema: `MAJOR.MINOR.PATCH`, pré-1.0 (`0.x.x` = ainda instável, API pode queb
 
 **Camadas de versão no projeto:**
 
-- **Mandrillus OS** (o produto) — versão central, hoje em `v0.2.0` (após o fechamento da Issue #9)
+- **Mandrillus OS** (o produto) — versão central, hoje em `v0.2.1` (após o fix do teclado no Hyper-V, PATCH sobre a `v0.2.0` da Issue #9)
 - **Drill** (componente/shell) — não tem versão própria pública por enquanto; só passaria a ter se um dia virar projeto separado (`Mandrillus.Drill`, ver adiamento em [status.md](status.md))
 - **Build/compilação** — número técnico separado, adiado até haver CI real (ver abaixo)
 
